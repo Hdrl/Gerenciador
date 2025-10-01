@@ -1,0 +1,51 @@
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #f8f9fa;
+}
+
+#sidebar {
+    width: 280px;
+    min-height: 100vh;
+    transition: all 0.3s;
+}
+
+#sidebar.collapsed {
+    width: 80px;
+}
+
+#sidebar.collapsed .sidebar-text {
+    display: none;
+}
+
+#sidebar.collapsed .nav-link {
+    text-align: center;
+}
+
+#sidebar.collapsed .nav-link i {
+    margin-right: 0 !important;
+    font-size: 1.5rem; /* Aumenta o ícone no modo recolhido */
+}
+
+#sidebar.collapsed .dropdown-toggle::after {
+    display: none;
+}
+#sidebar.collapsed #dropdownUser1 {
+    justify-content: center;
+}
+
+#sidebar .nav-link {
+    display: flex;
+    align-items: center;
+}
+
+#sidebar .nav-link .bi-chevron-down {
+    transition: transform 0.3s;
+}
+
+#sidebar .nav-link[aria-expanded="true"] .bi-chevron-down {
+    transform: rotate(180deg);
+}
+
+#main{
+    height: 100vh;
+}
