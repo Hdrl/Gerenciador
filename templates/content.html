@@ -1,0 +1,37 @@
+{% extends base.html %}
+
+{% block content %}
+<div class="container-fluid p-4">
+            <h1 class="mt-4">Visão Geral</h1>
+            <p>Seja bem-vindo ao seu painel de controle de atividades.</p>
+
+            <div class="row">
+                <div class="col-lg-6 mb-4">
+                    <div class="card text-white bg-primary">
+                        <div class="card-body">
+                            <h5 class="card-title">Total de Atividades</h5>
+                            <p class="card-text fs-1">{{ total_atividades }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 mb-4">
+                     <div class="card text-white bg-success">
+                        <div class="card-body">
+                            <h5 class="card-title">Atividades Concluídas</h5>
+                            <p class="card-text fs-1">{{ atividades_concluidas }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    Atividades Recentes
+                </div>
+                <div class="card-body">
+                    <p>Aqui você pode inserir uma tabela ou lista de atividades recentes.</p>
+                </div>
+            </div>
+
+        </div>
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <h1 class="mt-4 mb-4">Ordens de Serviço por Cliente</h1>
+
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Listagem de OS</span>
+            <form class="d-flex">
+                <input class="form-control me-2" type="search" placeholder="Buscar por cliente ou OS..." aria-label="Search">
+                <button class="btn btn-outline-primary" type="submit">Buscar</button>
+            </form>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col">OS Nº</th>
+                            <th scope="col">Cliente</th>
+                            <th scope="col">Equipamento</th>
+                            <th scope="col">Data de Entrada</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for os in ordens_de_servico %}
+                        <tr>
+                            <th scope="row">{{ os.id }}</th>
+                            <td>{{ os.cliente }}</td>
+                            <td>{{ os.equipamento }}</td>
+                            <td>{{ os.data }}</td>
+                            <td>
+                                {% if os.status == 'Concluído' %}
+                                    <span class="badge bg-success">{{ os.status }}</span>
+                                {% elif os.status == 'Em Andamento' %}
+                                    <span class="badge bg-primary">{{ os.status }}</span>
+                                {% elif os.status == 'Aguardando Peças' %}
+                                    <span class="badge bg-warning text-dark">{{ os.status }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ os.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-info" title="Visualizar"><i class="bi bi-eye-fill"></i></button>
+                                <button class="btn btn-sm btn-secondary" title="Editar"><i class="bi bi-pencil-fill"></i></button>
+                                <button class="btn btn-sm btn-danger" title="Excluir"><i class="bi bi-trash-fill"></i></button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
