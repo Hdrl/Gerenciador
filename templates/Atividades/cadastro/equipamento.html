@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+
+{% load static %}
+
+{% block content %}
+<div class="container-fluid p-4">
+    <h1 class="mt-4 mb-4">Cadastro de tipos de equipamento</h1>
+
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Tipos de Equipamento</span>
+            <a href="#" class="btn btn-primary">Novo Equipamento</a>
+        </div>
+
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-sm">
+                    <thead>
+                        <tr>
+                            <th scope="col">Identificador</th>
+                            <th scope="col">Descrição</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for equipamento in equipamentos %}
+                        <tr>
+                            <td class="center">{{ equipamento.idEquipamento }}</th>
+                            <td>{{ equipamento.descricao }}</td>
+                            <td>{{ equipamento.observacao | default_if_none:"-" | default:"-"}}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

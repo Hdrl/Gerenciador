@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from Atividades.models import TipoEquipamento, Problema
 
 # Create your views here.
 def ordem_servico(request):
@@ -15,3 +16,11 @@ def ordem_servico(request):
     return render(request, 'Atividades/ordem_servico.html', context)
 
 #post {"data1":"2025-09-30 00:00:01","data2":"2025-10-01 00:00:01"}
+
+def cadastro_equipamento(request):
+    context = {'equipamentos': TipoEquipamento.objects.all()}
+    return render(request, 'Atividades/cadastro/equipamento.html', context)  
+
+def cadastro_problema(request):
+    context = {'problemas': Problema.objects.all()}
+    return render(request, 'Atividades/cadastro/problema.html', context)
