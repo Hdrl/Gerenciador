@@ -1,5 +1,22 @@
 from django.contrib import admin
-from .models import Fornecedor, Item, MateriaPrima, ProdutoFabricado, EstruturaProduto, Projeto, Demanda
+from .models import Fornecedor, Item, MateriaPrima, ProdutoFabricado, EstruturaProduto, Projeto, Demanda, Atividade, produtoFabricadoAtividade
+
+
+@admin.register(Atividade)
+class AtividadeAdmin(admin.ModelAdmin):
+    list_display = ('projeto', 'tipoAtividade', 'situacao', 'dataInicial', 'dataFinal', 'responsavel')
+    search_fields = ('projeto__nome', 'responsavel__username')
+    list_filter = ('tipoAtividade', 'situacao', 'responsavel')
+    list_per_page = 20
+    ordering = ('-dataInicial',)
+
+@admin.register(produtoFabricadoAtividade)
+class produtoFabricadoAtividadeAdmin(admin.ModelAdmin):
+    list_display = ('atividade', 'produtoFabricado', 'quantidade')
+    search_fields = ('atividade__projeto__nome', 'produtoFabricado__codigo_item')
+    list_filter = ('atividade__tipoAtividade', 'produtoFabricado')
+    list_per_page = 20
+    ordering = ('-atividade',)
 
 @admin.register(Demanda)
 class DemandaAdmin(admin.ModelAdmin):

@@ -147,10 +147,26 @@ class NotaFiscal(models.Model):
     fornecedor = models.ForeignKey(Fornecedor, on_delete=models.CASCADE)
 
 class Atividade(models.Model):
-    projegit 
+    atividade_choices = [
+        ('M', 'MONTAGEM'),
+        ('E', 'EMBALAGEM'),
+        ('MA', 'MANUTENÇÃO'),
+    ]
+    situacao_choices = [
+        ('P', 'PENDENTE'),  
+        ('C', 'FINALIZADA'),
+    ]
     dataInicial = models.DateTimeField()
     dataFinal = models.DateTimeField()
-    situacao = models.CharField(max_length=50)
+    responsavel = models.ForeignKey(User, on_delete=models.CASCADE)
+    projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE)
+    tipoAtividade = models.CharField(choices=atividade_choices, max_length=2)
+    situacao = models.CharField(choices=situacao_choices, max_length=1)
+
+class produtoFabricadoAtividade(models.Model):
+    atividade = models.ForeignKey(Atividade, on_delete=models.CASCADE)
+    produtoFabricado = models.ForeignKey(ProdutoFabricado, on_delete=models.CASCADE)
+    quantidade = models.DecimalField(max_digits=10, decimal_places=4)
 
 class Problema(models.Model):
     idProblema = models.AutoField(primary_key=True)

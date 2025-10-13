@@ -1,6 +1,10 @@
 from django.shortcuts import render
 from Atividades.models import  Problema
 
+
+def index(request):
+    return render(request, 'Atividades/index.html')
+
 # Create your views here.
 def ordem_servico(request):
     ordens_de_servico = [
