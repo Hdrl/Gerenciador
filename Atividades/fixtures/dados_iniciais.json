@@ -1,0 +1,94 @@
+{
+  "fornecedores": [
+    {
+      "razao_social": "Componentes Eletrônicos BR",
+      "cnpj": "11.111.111/0001-11"
+    },
+    {
+      "razao_social": "PCB Factory GDL",
+      "cnpj": "22.222.222/0001-22"
+    }
+  ],
+  "materias_primas": [
+    {
+      "codigo_item": "MP-0001", "descricao": "Placa Arduino Uno R3", "unidade_medida": "UN",
+      "preco_custo_compra": 85.50, "fornecedor_padrao_cnpj": "11.111.111/0001-11"
+    },
+    {
+      "codigo_item": "MP-00002", "descricao": "Ethernet Shield W5100", "unidade_medida": "UN",
+      "preco_custo_compra": 45.00, "fornecedor_padrao_cnpj": "11.111.111/0001-11"
+    },
+    {
+      "codigo_item": "MP-0003", "descricao": "PCB Nua - Placa Borne", "unidade_medida": "UN",
+      "preco_custo_compra": 12.00, "fornecedor_padrao_cnpj": "22.222.222/0001-22"
+    },
+    {
+      "codigo_item": "MP-0004", "descricao": "Fonte Chaveada 12v", "unidade_medida": "UN",
+      "preco_custo_compra": 1.75, "fornecedor_padrao_cnpj": "11.111.111/0001-11"
+    },
+    {
+      "codigo_item": "MP-0005", "descricao": "Rele 5V", "unidade_medida": "UN",
+      "preco_custo_compra": 1.75, "fornecedor_padrao_cnpj": "11.111.111/0001-11"
+    },
+    {
+      "codigo_item": "MP-0006", "descricao": "Resistor Axial 100 ohms", "unidade_medida": "UN",
+      "preco_custo_compra": 1.75, "fornecedor_padrao_cnpj": "11.111.111/0001-11"
+    },
+    {
+      "codigo_item": "MP-0007", "descricao": "Capacitor Eletrolítico 100uF 25v", "unidade_medida": "UN",
+      "preco_custo_compra": 1.75, "fornecedor_padrao_cnpj": "11.111.111/0001-11"
+    },
+    {
+      "codigo_item": "MP-0008", "descricao": "Cooler 12V", "unidade_medida": "UN",
+      "preco_custo_compra": 1.75, "fornecedor_padrao_cnpj": "11.111.111/0001-11"
+    },
+    {
+      "codigo_item": "MP-0009", "descricao": "Gabinete e tampa concentrador", "unidade_medida": "UN",
+      "preco_custo_compra": 1.75, "fornecedor_padrao_cnpj": "11.111.111/0001-11"
+    },
+    {
+      "codigo_item": "MP-0010", "descricao": "espaçador de plastico", "unidade_medida": "UN",
+      "preco_custo_compra": 1.75, "fornecedor_padrao_cnpj": "11.111.111/0001-11"
+    },
+    {"codigo_item": "MP-0011", "descricao": "Resistor Axial 620 ohms", "unidade_medida": "UN",
+      "preco_custo_compra": 1.75, "fornecedor_padrao_cnpj": "11.111.111/0001-11"
+    }
+  ],
+  "produtos_fabricados": [
+    {
+      "codigo_item": "PF-0001", "descricao": "Concentrador", "unidade_medida": "UN",
+      "tempo_de_garantia_meses": 36
+    },
+    {
+      "codigo_item": "PF-0002", "descricao": "PBL 1", "unidade_medida": "UN",
+      "tempo_de_garantia_meses": 36
+    },
+    {
+      "codigo_item": "PF-0003", "descricao": "PBL 2", "unidade_medida": "UN",
+      "tempo_de_garantia_meses": 36
+    },
+    {
+      "codigo_item": "PF-0004", "descricao": "PBL 3", "unidade_medida": "UN",
+      "tempo_de_garantia_meses": 36
+    },
+    {
+      "codigo_item": "PF-0005", "descricao": "Mini Padpicking", "unidade_medida": "UN",
+      "tempo_de_garantia_meses": 36
+    },
+    {
+      "codigo_item": "PF-0006", "descricao": "Ethernet Shield W5100 + Circuito Reset", "unidade_medida": "UN",
+      "tempo_de_garantia_meses": 36
+    }
+  ],
+  "estrutura_produto": [
+    { "produto_pai_codigo": "PF-0001", "componente_filho_codigo": "MP-0004", "quantidade": 1 },
+    { "produto_pai_codigo": "PF-0001", "componente_filho_codigo": "MP-0001", "quantidade": 1 },
+    { "produto_pai_codigo": "PF-0001", "componente_filho_codigo": "MP-0002", "quantidade": 1 },
+    { "produto_pai_codigo": "PF-0001", "componente_filho_codigo": "MP-0005", "quantidade": 1 },
+    { "produto_pai_codigo": "PF-0001", "componente_filho_codigo": "MP-0008", "quantidade": 2 },
+    { "produto_pai_codigo": "PF-0001", "componente_filho_codigo": "MP-0009", "quantidade": 1 },
+    { "produto_pai_codigo": "PF-0001", "componente_filho_codigo": "MP-0010", "quantidade": 9 },
+    { "produto_pai_codigo": "PF-0006", "componente_filho_codigo": "MP-0006", "quantidade": 1 },
+    { "produto_pai_codigo": "PF-0006", "componente_filho_codigo": "MP-0007", "quantidade": 1 }
+  ]
+}
