@@ -1,7 +1,8 @@
 from django.shortcuts import render
 from django.db.models import Prefetch
 from Atividades.models import  Problema, Projeto, Demanda
-
+from Atividades.forms import ProjetoForm
+from django.shortcuts import redirect
 
 def index(request):
     prefetch_demandas_com_produtos = Prefetch(
@@ -36,9 +37,41 @@ def ordem_servico(request):
 #post {"data1":"2025-09-30 00:00:01","data2":"2025-10-01 00:00:01"}
 
 def cadastro_equipamento(request):
-    context = {},
+    context = {}
     return render(request, 'Atividades/cadastro/equipamento.html', context)  
 
 def cadastro_problema(request):
     context = {'problemas': Problema.objects.all()}
     return render(request, 'Atividades/cadastro/problema.html', context)
+
+def cadastro_projeto(request):
+    context = {'projetos': Projeto.objects.all()}
+    return render(request, 'Atividades/cadastro/projeto.html', context)
+
+def formulario_adcionar_projeto(request):
+    if request.method == 'POST':
+        form = ProjetoForm(request.POST)
+        if form.is_valid():
+            form.save()
+            # Redirecionar para a página de listagem de projetos após salvar
+            return redirect('atividades:cadastro_projeto')
+    context = {
+        'form': ProjetoForm()
+    }
+    return render(request, 'Atividades/cadastro/formulario_adcionar/projeto.html', context) 
+
+def cadastro_demanda(request):
+    context = {'demandas': Demanda.objects.all()}
+    return render(request, 'Atividades/cadastro/demanda.html', context)
+
+def formulario_adcionar_demanda(request):
+    if request.method == 'POST':
+        form = ProjetoForm(request.POST)
+        if form.is_valid():
+            form.save()
+            # Redirecionar para a página de listagem de projetos após salvar
+            return redirect('atividades:cadastro_demanda')
+    context = {
+        'form': ProjetoForm()
+    }
+    return render(request, 'Atividades/cadastro/formulario_adcionar/demanda.html', context)

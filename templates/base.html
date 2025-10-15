@@ -40,9 +40,10 @@
                 </a>
                 <div class="collapse" id="submenu-tarefas">
                     <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small ms-4">           
-                        <li><i class="bi bi-person-circle me-2"></i><a href="#" class="link-light rounded">Cliente</a></li>
+                        <li><i class="bi bi-person-circle me-2"></i><a href="{% url 'atividades:cadastro_projeto' %}" class="link-light rounded">Projeto</a></li>
                         <li><i class="bi bi-bug-fill me-2"></i><a href="{% url 'atividades:cadastro_problema' %}" class="link-light rounded">Problema</a></li>
                         <li><i class="bi bi-pc-display me-2"></i><a href="{% url 'atividades:cadastro_equipamento' %}" class="link-light rounded">Equipamento</a></li>
+                        <li><i class="bi bi-card-list me-2"></i><a href="{% url 'atividades:cadastro_demanda' %}" class="link-light rounded">Demanda</a></li>
                     </ul>
                 </div>
             </li>
