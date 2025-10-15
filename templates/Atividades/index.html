@@ -1,1 +1,138 @@
 {% extends 'base.html'%}
+{% load atividades_tags %}
+
+{% block content %}
+<style>
+    /* CSS para a interatividade (sem alterações) */
+    .project-card {
+        cursor: pointer;
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+    .project-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .selected-card {
+        border: 2px solid var(--bs-primary);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    .fade-in-section {
+        animation: fadeIn 0.5s ease-in-out;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
+<div class="container mt-4">
+    <h3>Demandas Pendentes</h3>
+    <p class="text-muted">Selecione um projeto para ver mais detalhes.</p>
+
+    <div class="d-flex flex-wrap gap-3">
+        {% for projeto in projetos %}
+            {% if projeto.demandas.all %}
+                <div class="card project-card" 
+                     style="width: 22rem;"
+                     data-project-id="{{ projeto.id }}"
+                     data-project-nome="{{ projeto.nome }}"
+                     data-project-status="{{ projeto.get_status_display }}"
+                     data-project-status-class="{{ projeto.get_status_badge_class }}"
+                     data-project-descricao="{{ projeto.descricao|default:'Este projeto não possui uma descrição detalhada.' }}">
+                    
+                    <div class="card-body">
+                        <h5 class="card-title">{{ projeto.nome }}</h5>
+                        <span class="badge {{ projeto.get_status_badge_class }}">{{ projeto.get_status_display }}</span>                   
+
+                        <table class="table table-sm table-borderless mt-3">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Produto</th>
+                                    <th scope="col" class="text-center">Qtd.</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for demanda in projeto.demandas.all|slice:":4" %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ demanda.produto.codigo_item }}</strong>
+                                        {% if demanda.descricao %}
+                                            <small class="text-muted d-block">{{ demanda.descricao|truncatechars:30 }}</small>
+                                        {% else %}
+                                            <small class="text-muted d-block">{{ demanda.produto.descricao|truncatechars:30 }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center align-middle">
+                                        <span class="badge bg-secondary rounded-pill">
+                                            {{ demanda.quantidade | to_int }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                {% if projeto.demandas.all.count > 4 %}
+                                    {% with remaining_count=projeto.demandas.all.count|add:"-4" %}
+                                        <tr>
+                                            <td colspan="2" class="text-center pt-2">
+                                                <small class="text-muted fst-italic">
+                                                    ... e mais {{ remaining_count }} demanda{{ remaining_count|pluralize }}.
+                                                </small>
+                                            </td>
+                                        </tr>
+                                    {% endwith %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            {% endif %} 
+        {% endfor %}
+    </div>
+
+    <hr class="my-4">
+
+    <div id="project-details-section" class="d-none">
+        <h2 id="details-title"></h2>
+        <p>
+            <strong>Status:</strong> 
+            <span id="details-status-badge" class="badge"></span>
+        </p>
+        <p id="details-description" class="lead"></p>
+    </div>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.project-card');
+    const detailsSection = document.getElementById('project-details-section');
+    const detailsTitle = document.getElementById('details-title');
+    const detailsStatusBadge = document.getElementById('details-status-badge');
+    const detailsDescription = document.getElementById('details-description');
+
+    cards.forEach(card => {
+        card.addEventListener('click', function() {
+            cards.forEach(c => c.classList.remove('selected-card'));
+            this.classList.add('selected-card');
+
+            const nome = this.dataset.projectNome;
+            const status = this.dataset.projectStatus;
+            const statusClass = this.dataset.projectStatusClass;
+            const descricao = this.dataset.projectDescricao;
+
+            detailsTitle.textContent = nome;
+            detailsDescription.textContent = descricao;
+            
+            detailsStatusBadge.textContent = status;
+            detailsStatusBadge.className = 'badge ' + statusClass;
+
+            detailsSection.classList.remove('d-none');
+            detailsSection.classList.remove('fade-in-section');
+            void detailsSection.offsetWidth;
+            detailsSection.classList.add('fade-in-section');
+        });
+    });
+    cards[0]?.click();  // Seleciona o primeiro cartão por padrão
+});
+</script>
+
+{% endblock %}

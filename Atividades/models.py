@@ -131,20 +131,30 @@ class Projeto(models.Model):
     data_inicio = models.DateTimeField(null=True, blank=True)
     data_fim = models.DateTimeField(null=True, blank=True)
 
+    def get_status_badge_class(self):
+        """Retorna a classe CSS do Bootstrap para o status atual."""
+        if self.status == 'FN':
+            return 'bg-success'
+        elif self.status in ['IM', 'EN', 'PR', 'GO']:
+            return 'bg-primary'
+        elif self.status == 'AG':
+            return 'bg-warning text-dark'
+        else:
+            return 'bg-secondary'
+
     def __str__(self):
         return self.nome
 
 class Demanda(models.Model):
+    descricao = models.CharField(max_length=200, null=True, blank=True)
     quantidade = models.DecimalField(max_digits=10, decimal_places=4)
     produto = models.ForeignKey(Item, on_delete=models.CASCADE)
-    projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE)
+    projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE,  related_name='demandas')
 
-#apagar talvez
-class NotaFiscal(models.Model):
-    numero = models.CharField(max_length=50)
-    dataEmissao = models.DateTimeField()
-    valorTotal = models.DecimalField(max_digits=10, decimal_places=2)
-    fornecedor = models.ForeignKey(Fornecedor, on_delete=models.CASCADE)
+    def __str__(self):
+        value = int(self.quantidade)
+        desc = self.descricao if self.descricao else self.produto.descricao
+        return f"{value} x {desc}"
 
 class Atividade(models.Model):
     atividade_choices = [

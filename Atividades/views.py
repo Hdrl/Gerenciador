@@ -1,9 +1,23 @@
 from django.shortcuts import render
-from Atividades.models import  Problema
+from django.db.models import Prefetch
+from Atividades.models import  Problema, Projeto, Demanda
 
 
 def index(request):
-    return render(request, 'Atividades/index.html')
+    prefetch_demandas_com_produtos = Prefetch(
+        'demandas',
+        queryset=Demanda.objects.select_related('produto')
+    )
+
+    # Agora, ao buscar os projetos, aplicamos este prefetch otimizado.
+    projetos_com_demandas = Projeto.objects.all().prefetch_related(
+        prefetch_demandas_com_produtos
+    )
+    
+    context = {
+        'projetos': projetos_com_demandas,
+    }
+    return render(request, 'Atividades/index.html', context)
 
 # Create your views here.
 def ordem_servico(request):
@@ -22,6 +36,7 @@ def ordem_servico(request):
 #post {"data1":"2025-09-30 00:00:01","data2":"2025-10-01 00:00:01"}
 
 def cadastro_equipamento(request):
+    context = {},
     return render(request, 'Atividades/cadastro/equipamento.html', context)  
 
 def cadastro_problema(request):
