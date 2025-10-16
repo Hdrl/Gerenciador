@@ -46,7 +46,7 @@ def cadastro_projeto(request):
         'field_names': field_list,
         'link_adcionar': 'atividades:formulario_adcionar_projeto',
     }
-    return render(request, 'Atividades/cadastro/cadastro.html', context)
+    return render(request, 'Atividades/cadastro.html', context)
 
 def formulario_adcionar_projeto(request):
     if request.method == 'POST':
@@ -56,9 +56,10 @@ def formulario_adcionar_projeto(request):
             # Redirecionar para a página de listagem de projetos após salvar
             return redirect('atividades:cadastro_projeto')
     context = {
-        'form': ProjetoForm()
+        'form': ProjetoForm(),
+        'verbose_name': Projeto._meta.verbose_name,
     }
-    return render(request, 'Atividades/cadastro/formulario_adcionar/projeto.html', context) 
+    return render(request, 'Atividades/adcionar_modelo.html', context) 
 
 def cadastro_demanda(request):
     field_list = ['produto', 'quantidade', 'projeto', 'finalizado']
@@ -71,7 +72,7 @@ def cadastro_demanda(request):
         'field_names': field_list,
         'link_adcionar': 'atividades:formulario_adcionar_demanda',
     }
-    return render(request, 'Atividades/cadastro/cadastro.html', context)
+    return render(request, 'Atividades/cadastro.html', context)
 
 def formulario_adcionar_demanda(request):
     if request.method == 'POST':
@@ -80,6 +81,7 @@ def formulario_adcionar_demanda(request):
             form.save()
             return redirect('atividades:cadastro_demanda')
     context = {
-        'form': DemandaForm()
+        'form': DemandaForm(),
+        'verbose_name': Demanda._meta.verbose_name,
     }
-    return render(request, 'Atividades/cadastro/formulario_adcionar/demanda.html', context)
+    return render(request, 'Atividades/adcionar_modelo.html', context)

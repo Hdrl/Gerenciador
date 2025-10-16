@@ -7,10 +7,10 @@ class ProjetoForm(forms.ModelForm):
         fields = ['nome', 'descricao', 'status', 'data_inicio', 'data_fim']
         widgets = {
             'data_inicio': forms.DateInput(attrs={'type': 'date'}),
-            'data_final': forms.DateInput(attrs={'type': 'date'}),
+            'data_fim': forms.DateInput(attrs={'type': 'date'}),
         }
 
 class DemandaForm(forms.ModelForm):
     class Meta:
         model = Demanda
-        fields = ['nome', 'quantidade', 'produto']
+        fields = ['nome', 'quantidade', 'produto', 'projeto']

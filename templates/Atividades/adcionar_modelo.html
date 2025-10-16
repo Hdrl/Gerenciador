@@ -16,14 +16,14 @@
 
 {% block content %}
 <div class="p-3 ms-4">
-    <h1>Adicionar Novo Demanda</h1>
+    <h1>Adicionar Novo {{verbose_name | title}}</h1>
 
         <form method="post">
             {% csrf_token %}
             
             {{ form.as_p }}
             
-            <button type="submit" class="btn btn-dark">Salvar Demanda</button>
+            <button type="submit" class="btn btn-dark">Salvar {{verbose_name}}</button>
         </form>
 </div>
 {% endblock %}

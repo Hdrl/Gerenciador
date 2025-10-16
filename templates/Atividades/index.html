@@ -91,12 +91,57 @@
     <hr class="my-4">
 
     <div id="project-details-section" class="d-none">
-        <h2 id="details-title"></h2>
-        <p>
-            <strong>Status:</strong> 
-            <span id="details-status-badge" class="badge"></span>
-        </p>
-        <p id="details-description" class="lead"></p>
+    <h2 id="details-title"></h2>
+    <p>
+        <strong>Status:</strong>
+        <span id="details-status-badge" class="badge"></span>
+    </p>
+    <p id="details-description" class="lead"></p>
+
+    <div class="mt-4">
+        <ul class="nav nav-tabs" id="project-tabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#acesso-remoto-pane" type="button" role="tab">Acesso Remoto</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#sistema-pane" type="button" role="tab">Sistema</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#documentacao-pane" type="button" role="tab">Documentação</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#equipamento-pane" type="button" role="tab">Equipamento</button>
+            </li>
+             <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#processos-pane" type="button" role="tab">Processos</button>
+            </li>
+             <li class="nav-item" role="presentation">
+                <button class="nav-link" data-bs-toggle="tab" data-bs-target="#modulos-pane" type="button" role="tab">Módulos</button>
+            </li>
+        </ul>
+
+        <div class="tab-content border border-top-0 p-3" id="project-tab-content">
+            <div class="tab-pane fade show active" id="equipamento-pane" role="tabpanel">
+                <div class="d-flex justify-content-between align-items-center bg-light p-2 mb-3 rounded-top">
+                    <h6 class="mb-0 text-muted fw-bold">Equipamentos vinculados ao Projeto</h6>
+                    <div class="btn-group" role="group">
+                        <a href="#" id="add-equipment-link" class="btn btn-success btn-sm" title="Adicionar Equipamento">+</a>
+                        <a href="#" id="edit-equipment-link" class="btn btn-primary btn-sm" title="Editar Equipamento">&#9998;</a> <a href="#" id="remove-equipment-link" class="btn btn-danger btn-sm" title="Remover Equipamento">-</a>
+                    </div>
+                </div>
+
+                <div id="equipment-list-placeholder">
+                     <p class="text-center text-muted">Selecione um projeto para ver os equipamentos.</p>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="acesso-remoto-pane" role="tabpanel"><p>Conteúdo de Acesso Remoto...</p></div>
+            <div class="tab-pane fade" id="sistema-pane" role="tabpanel"><p>Conteúdo de Sistema...</p></div>
+            <div class="tab-pane fade" id="documentacao-pane" role="tabpanel"><p>Conteúdo de Documentação...</p></div>
+            <div class="tab-pane fade" id="processos-pane" role="tabpanel"><p>Conteúdo de Processos...</p></div>
+            <div class="tab-pane fade" id="modulos-pane" role="tabpanel"><p>Conteúdo de Módulos...</p></div>
+        </div>
+    </div>
     </div>
 
 </div>
@@ -109,29 +154,43 @@ document.addEventListener('DOMContentLoaded', function() {
     const detailsStatusBadge = document.getElementById('details-status-badge');
     const detailsDescription = document.getElementById('details-description');
 
+    // Seleciona os links dos botões que acabamos de criar
+    const addEquipmentLink = document.getElementById('add-equipment-link');
+    const editEquipmentLink = document.getElementById('edit-equipment-link');
+    const removeEquipmentLink = document.getElementById('remove-equipment-link');
+
     cards.forEach(card => {
         card.addEventListener('click', function() {
+            // Remove a seleção de outros cartões
             cards.forEach(c => c.classList.remove('selected-card'));
             this.classList.add('selected-card');
 
+            // Pega os dados do cartão clicado
+            const projectId = this.dataset.projectId;
             const nome = this.dataset.projectNome;
             const status = this.dataset.projectStatus;
             const statusClass = this.dataset.projectStatusClass;
             const descricao = this.dataset.projectDescricao;
 
             detailsTitle.textContent = nome;
-            detailsDescription.textContent = descricao;
-            
+            //detailsDescription.textContent = descricao;
             detailsStatusBadge.textContent = status;
             detailsStatusBadge.className = 'badge ' + statusClass;
 
+            addEquipmentLink.href = `/projetos/${projectId}/equipamentos/adicionar/`;
+            editEquipmentLink.href = `/projetos/${projectId}/equipamentos/editar/`; // Geralmente precisa de um ID de equipamento
+            removeEquipmentLink.href = `/projetos/${projectId}/equipamentos/remover/`; // Idem
+
             detailsSection.classList.remove('d-none');
             detailsSection.classList.remove('fade-in-section');
-            void detailsSection.offsetWidth;
+            void detailsSection.offsetWidth; // Força o repaint para reiniciar a animação
             detailsSection.classList.add('fade-in-section');
         });
     });
-    cards[0]?.click();  // Seleciona o primeiro cartão por padrão
+
+    if (cards.length > 0) {
+        cards[0].click();
+    }
 });
 </script>
 
