@@ -146,9 +146,10 @@ class Projeto(models.Model):
         return self.nome
 
 class Demanda(models.Model):
-    descricao = models.CharField(max_length=200, null=True, blank=True)
-    quantidade = models.DecimalField(max_digits=10, decimal_places=4)
+    nome = models.CharField(max_length=200, null=True, blank=True)
+    quantidade = models.IntegerField()
     produto = models.ForeignKey(Item, on_delete=models.CASCADE)
+    finalizado = models.BooleanField(default=False)
     projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE,  related_name='demandas')
 
     def __str__(self):
@@ -183,10 +184,12 @@ class Problema(models.Model):
     descricao = models.CharField(max_length=100)
 
 class OrdemServico(models.Model):
-    idOrdemServico = models.AutoField(primary_key=True)
+    localExecucao_choices = [
+        ('E', 'Empresa'),
+        ('C', 'Cliente'),
+    ]
     solicitante = models.CharField(max_length=100)
-    localExecucao = models.CharField(max_length=100)
-    Projeto = models.CharField(max_length=100)
+    localExecucao = models.CharField(choices=localExecucao_choices, max_length=1)
     Transportadora = models.CharField(max_length=100)
     codigoRastreio = models.CharField(max_length=100, null=True)
     dataInicio = models.DateTimeField()
@@ -197,3 +200,4 @@ class OrdemServico(models.Model):
     diagnosticoTecnico = models.TextField(null=True)
     servicoRealizado = models.TextField(null=True)
     tecnicoResponsavel = models.ForeignKey(User, on_delete=models.CASCADE)
+    projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE, related_name='ordens_servico')

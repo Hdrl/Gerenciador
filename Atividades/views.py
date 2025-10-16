@@ -1,8 +1,7 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.db.models import Prefetch
 from Atividades.models import  Problema, Projeto, Demanda
-from Atividades.forms import ProjetoForm
-from django.shortcuts import redirect
+from Atividades.forms import ProjetoForm, DemandaForm
 
 def index(request):
     prefetch_demandas_com_produtos = Prefetch(
@@ -36,17 +35,18 @@ def ordem_servico(request):
 
 #post {"data1":"2025-09-30 00:00:01","data2":"2025-10-01 00:00:01"}
 
-def cadastro_equipamento(request):
-    context = {}
-    return render(request, 'Atividades/cadastro/equipamento.html', context)  
-
-def cadastro_problema(request):
-    context = {'problemas': Problema.objects.all()}
-    return render(request, 'Atividades/cadastro/problema.html', context)
-
 def cadastro_projeto(request):
-    context = {'projetos': Projeto.objects.all()}
-    return render(request, 'Atividades/cadastro/projeto.html', context)
+    field_list = ['nome', 'descricao', 'status', 'data_inicio', 'data_fim']
+
+    context = {
+        'querys': Projeto.objects.all(),
+        'verbose_name': Projeto._meta.verbose_name,
+        'verbose_name_plural': Projeto._meta.verbose_name_plural,
+        'field_headers': [Projeto._meta.get_field(f).verbose_name for f in field_list],
+        'field_names': field_list,
+        'link_adcionar': 'atividades:formulario_adcionar_projeto',
+    }
+    return render(request, 'Atividades/cadastro/cadastro.html', context)
 
 def formulario_adcionar_projeto(request):
     if request.method == 'POST':
@@ -61,17 +61,25 @@ def formulario_adcionar_projeto(request):
     return render(request, 'Atividades/cadastro/formulario_adcionar/projeto.html', context) 
 
 def cadastro_demanda(request):
-    context = {'demandas': Demanda.objects.all()}
-    return render(request, 'Atividades/cadastro/demanda.html', context)
+    field_list = ['produto', 'quantidade', 'projeto', 'finalizado']
+
+    context = {
+        'querys': Demanda.objects.all(),
+        'verbose_name': Demanda._meta.verbose_name,
+        'verbose_name_plural': Demanda._meta.verbose_name_plural,
+        'field_headers': [Demanda._meta.get_field(f).verbose_name for f in field_list],
+        'field_names': field_list,
+        'link_adcionar': 'atividades:formulario_adcionar_demanda',
+    }
+    return render(request, 'Atividades/cadastro/cadastro.html', context)
 
 def formulario_adcionar_demanda(request):
     if request.method == 'POST':
-        form = ProjetoForm(request.POST)
+        form = DemandaForm(request.POST)
         if form.is_valid():
             form.save()
-            # Redirecionar para a página de listagem de projetos após salvar
             return redirect('atividades:cadastro_demanda')
     context = {
-        'form': ProjetoForm()
+        'form': DemandaForm()
     }
     return render(request, 'Atividades/cadastro/formulario_adcionar/demanda.html', context)

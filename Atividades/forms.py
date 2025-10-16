@@ -13,4 +13,4 @@ class ProjetoForm(forms.ModelForm):
 class DemandaForm(forms.ModelForm):
     class Meta:
         model = Demanda
-        fields = ['descricao', 'quantidade', 'produto']
+        fields = ['nome', 'quantidade', 'produto']
