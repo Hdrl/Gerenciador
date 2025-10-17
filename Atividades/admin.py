@@ -1,6 +1,13 @@
 from django.contrib import admin
-from .models import Fornecedor, Item, MateriaPrima, ProdutoFabricado, EstruturaProduto, Projeto, Demanda, Atividade, produtoFabricadoAtividade
+from .models import Fornecedor, Item, MateriaPrima, ProdutoFabricado, EstruturaProduto, Projeto, Demanda, Atividade, produtoFabricadoAtividade, OrdemServico
 
+@admin.register(OrdemServico)
+class OrdemServicoAdmin(admin.ModelAdmin):
+    list_display = ('solicitante', 'localExecucao', 'Transportadora', 'projeto', 'dataInicio', 'dataTermino')
+    search_fields = ('solicitante', 'Transportadora', 'projeto__nome')
+    list_filter = ('localExecucao', 'dataInicio', 'dataTermino')
+    list_per_page = 20
+    ordering = ('-dataInicio',)
 
 @admin.register(Atividade)
 class AtividadeAdmin(admin.ModelAdmin):

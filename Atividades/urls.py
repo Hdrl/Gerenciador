@@ -10,4 +10,5 @@ urlpatterns = [
     path('cadastro/projeto/novo/', views.formulario_adcionar_projeto, name='formulario_adcionar_projeto'),
     path('cadastro/demanda/', views.cadastro_demanda, name='cadastro_demanda'),
     path('cadastro/demanda/novo/', views.formulario_adcionar_demanda, name='formulario_adcionar_demanda'),
+    path('cadastro/ordemservico/novo/', views.formulario_adcionar_ordemservico, name='formulario_adcionar_ordemservico'),
 ]

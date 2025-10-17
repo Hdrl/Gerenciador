@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.db.models import Prefetch
-from Atividades.models import  Problema, Projeto, Demanda
-from Atividades.forms import ProjetoForm, DemandaForm
+from Atividades.models import  Problema, Projeto, Demanda, OrdemServico
+from Atividades.forms import ProjetoForm, DemandaForm, OrdemServicoForm
 
 def index(request):
     prefetch_demandas_com_produtos = Prefetch(
@@ -33,6 +33,18 @@ def ordem_servico(request):
     }
     return render(request, 'Atividades/ordem_servico.html', context)
 
+def formulario_adcionar_ordemservico(request):
+    if request.method == 'POST':
+        form = OrdemServicoForm(request.POST)
+        if form.is_valid():
+            form.save()
+            # Redirecionar para a página de listagem de projetos após salvar
+            return redirect('atividades:cadastro_projeto')
+    context = {
+        'form': OrdemServicoForm(),
+        'verbose_name': OrdemServico._meta.verbose_name,
+    }
+    return render(request, 'Atividades/adcionar_modelo.html', context) 
 #post {"data1":"2025-09-30 00:00:01","data2":"2025-10-01 00:00:01"}
 
 def cadastro_projeto(request):

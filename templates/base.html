@@ -33,23 +33,16 @@
                 </a>
             </li>
             <li>
-                <a href="#submenu-tarefas" data-bs-toggle="collapse" class="nav-link text-white">
+                <a href="/admin/" class="nav-link text-white">
                     <i class="bi bi-list-task me-2"></i>
                     <span class="sidebar-text">Cadastro</span>
-                    <i class="bi bi-chevron-down sidebar-text ms-auto"></i>
                 </a>
-                <div class="collapse" id="submenu-tarefas">
-                    <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small ms-4">           
-                        <li><i class="bi bi-person-circle me-2 p-1"></i><a href="{% url 'atividades:cadastro_projeto' %}" class="link-light rounded">Projeto</a></li>
-                        <li><i class="bi bi-card-list me-2"></i><a href="{% url 'atividades:cadastro_demanda' %}" class="link-light rounded">Demanda</a></li>
-                    </ul>
-                </div>
             </li>
             <li>
-            <a href="{% url 'atividades:lista_os' %}" class="nav-link text-white">
-                <i class="bi bi-card-list me-2"></i>
-                <span class="sidebar-text">Ordens de Serviço</span>
-            </a>
+                <a href="{% url 'atividades:lista_os' %}" class="nav-link text-white">
+                    <i class="bi bi-card-list me-2"></i>
+                    <span class="sidebar-text">Ordens de Serviço</span>
+                </a>
             </li>
             <li>
                 <a href="#submenu-tarefas" data-bs-toggle="collapse" class="nav-link text-white">
@@ -110,6 +103,10 @@
     </main>
 </div>
 
+<script>
+
+
+</script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{% static 'Atividades/js/scripts.js' %}"></script>
