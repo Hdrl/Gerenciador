@@ -26,3 +26,14 @@ def get_display(obj, attr_name):
     else:
         # Se não, retorna o valor do atributo diretamente
         return getattr(obj, attr_name, '')
+    
+
+@register.filter
+def pendentes(demandas_lista):
+    """
+    Filtra uma lista de demandas para retornar apenas as que não estão finalizadas.
+    Uso: {{ demandas|pendentes }}
+    """
+    if not demandas_lista:
+        return []
+    return [demanda for demanda in demandas_lista if not demanda.finalizado]

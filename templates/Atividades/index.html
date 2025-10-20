@@ -1,9 +1,9 @@
 {% extends 'base.html'%}
 {% load atividades_tags %}
 
-{% block content %}
-<style>
-    /* CSS para a interatividade (sem alterações) */
+
+{% block style %}
+      /* CSS para a interatividade (sem alterações) */
     .project-card {
         cursor: pointer;
         transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
@@ -23,68 +23,75 @@
         from { opacity: 0; transform: translateY(20px); }
         to { opacity: 1; transform: translateY(0); }
     }
-</style>
-
+{% endblock %}
+{% block content %}
+{% csrf_token %}
 <div class="container mt-4">
     <h3>Demandas Pendentes</h3>
     <p class="text-muted">Selecione um projeto para ver mais detalhes.</p>
 
     <div class="d-flex flex-wrap gap-3">
         {% for projeto in projetos %}
-            {% if projeto.demandas.all %}
-                <div class="card project-card" 
-                     style="width: 22rem;"
-                     data-project-id="{{ projeto.id }}"
-                     data-project-nome="{{ projeto.nome }}"
-                     data-project-status="{{ projeto.get_status_display }}"
-                     data-project-status-class="{{ projeto.get_status_badge_class }}"
-                     data-project-descricao="{{ projeto.descricao|default:'Este projeto não possui uma descrição detalhada.' }}">
-                    
-                    <div class="card-body">
-                        <h5 class="card-title">{{ projeto.nome }}</h5>
-                        <span class="badge {{ projeto.get_status_badge_class }}">{{ projeto.get_status_display }}</span>                   
+            {% with demandas_pendente=projeto.todas_demandas|pendentes %}
+                {% if demandas_pendente %}   
+                    <div class="card project-card" 
+                        style="width: 22rem;"
+                        data-project-id="{{ projeto.id }}"
+                        data-project-nome="{{ projeto.nome }}"
+                        data-project-status="{{ projeto.get_status_display }}"
+                        data-project-status-class="{{ projeto.get_status_badge_class }}"
+                        data-project-descricao="{{ projeto.descricao|default:'Este projeto não possui uma descrição detalhada.' }}">
+                        
+                        <div class="card-body">
+                            <h5 class="card-title">{{ projeto.nome }}</h5>
+                            <span class="badge {{ projeto.get_status_badge_class }}">{{ projeto.get_status_display }}</span>                   
 
-                        <table class="table table-sm table-borderless mt-3">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Produto</th>
-                                    <th scope="col" class="text-center">Qtd.</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for demanda in projeto.demandas.all|slice:":4" %}
-                                <tr>
-                                    <td>
-                                        <strong>{{ demanda.produto.codigo_item }}</strong>
-                                        {% if demanda.descricao %}
-                                            <small class="text-muted d-block">{{ demanda.descricao|truncatechars:30 }}</small>
-                                        {% else %}
-                                            <small class="text-muted d-block">{{ demanda.produto.descricao|truncatechars:30 }}</small>
-                                        {% endif %}
-                                    </td>
-                                    <td class="text-center align-middle">
-                                        <span class="badge bg-secondary rounded-pill">
-                                            {{ demanda.quantidade }}
-                                        </span>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                                {% if projeto.demandas.all.count > 4 %}
-                                    {% with remaining_count=projeto.demandas.all.count|add:"-4" %}
+                            <table class="table table-sm table-borderless mt-3">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Produto</th>
+                                        <th scope="col" class="text-center">Qtd.</th>
+                                        <th scope="col" class="text-center">Finalizado?</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for demanda in demandas_pendente|slice:":4"%}
                                         <tr>
-                                            <td colspan="2" class="text-center pt-2">
-                                                <small class="text-muted fst-italic">
-                                                    ... e mais {{ remaining_count }} demanda{{ remaining_count|pluralize }}.
-                                                </small>
+                                            <td>
+                                                <strong>{{ demanda.produto.codigo_item }}</strong>
+                                                {% if demanda.descricao %}
+                                                    <small class="text-muted d-block">{{ demanda.descricao|truncatechars:30 }}</small>
+                                                {% else %}
+                                                    <small class="text-muted d-block">{{ demanda.produto.descricao|truncatechars:30 }}</small>
+                                                {% endif %}
+                                            </td>
+                                            <td class="text-center align-middle">
+                                                <span class="badge bg-secondary rounded-pill">
+                                                    {{ demanda.quantidade }}
+                                                </span>
+                                            </td>
+                                            <td class="text-center align-middle">
+                                                <input class="check-finalizado" type="checkbox" data-demanda-id="{{demanda.id}}">
                                             </td>
                                         </tr>
-                                    {% endwith %}
-                                {% endif %}
-                            </tbody>
-                        </table>
+                                    {% endfor %}
+                                    {% if demandas_pendente|length > 4 %}
+                                        {% with remaining_count=demandas_pendente|length|add:"-4" %}
+                                            <tr>
+                                                <td colspan="2" class="text-center pt-2">
+                                                    <small class="text-muted fst-italic">
+                                                        ... e mais {{ remaining_count }} demanda{{ remaining_count|pluralize }}.
+                                                    </small>
+                                                </td>
+                                            </tr>
+                                        {% endwith %}
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
-            {% endif %} 
+                {% endif %}
+            {% endwith %}
         {% endfor %}
     </div>
 
@@ -148,16 +155,29 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+
+    
     const cards = document.querySelectorAll('.project-card');
     const detailsSection = document.getElementById('project-details-section');
     const detailsTitle = document.getElementById('details-title');
     const detailsStatusBadge = document.getElementById('details-status-badge');
     const detailsDescription = document.getElementById('details-description');
+    const checkFinalizado = document.querySelectorAll('.check-finalizado');
 
     // Seleciona os links dos botões que acabamos de criar
     const addEquipmentLink = document.getElementById('add-equipment-link');
     const editEquipmentLink = document.getElementById('edit-equipment-link');
     const removeEquipmentLink = document.getElementById('remove-equipment-link');
+
+    checkFinalizado.forEach(checkbox => {
+        checkbox.addEventListener('change', function(event) {
+            const checkboxAtual = this;
+            demandaId = this.dataset.demandaId;
+            const isFinalizado = this.checked;  
+
+            atualizarDemanda(demandaId, { 'finalizado': isFinalizado}, checkboxAtual);
+        });
+    });
 
     cards.forEach(card => {
         card.addEventListener('click', function() {
@@ -191,6 +211,35 @@ document.addEventListener('DOMContentLoaded', function() {
     if (cards.length > 0) {
         cards[0].click();
     }
+    
+    function atualizarDemanda(demandaId, dadosParaAtualizar, checkboxElement) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const url = `/demanda/editar/${demandaId}/`;
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify(dadosParaAtualizar)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'sucesso') {
+                console.log('Sucesso:', data.mensagem);
+                if(dadosParaAtualizar.finalizado)
+                    checkboxElement.closest('tr').remove();
+            } else {
+                console.error('Erro:', data.mensagem);
+                if(checkboxElement) checkboxElement.checked = !dadosParaAtualizar.finalizado;
+            }
+        })
+        .catch(error => {
+            console.error('Erro de rede:', error);
+            if(checkboxElement) checkboxElement.checked = !dadosParaAtualizar.finalizado;
+        });
+    }   
 });
 </script>
 

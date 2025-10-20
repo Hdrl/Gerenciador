@@ -154,8 +154,19 @@ class Demanda(models.Model):
 
     def __str__(self):
         value = int(self.quantidade)
-        desc = self.descricao if self.descricao else self.produto.descricao
+        desc = self.nome if self.nome else self.produto.descricao
         return f"{value} x {desc}"
+
+class Equipamento(models.Model):
+    """
+    Representa um item físico, único e rastreável.
+    """
+    produto = models.ForeignKey(ProdutoFabricado, on_delete=models.PROTECT)
+    numero_serie = models.CharField(max_length=100, unique=True, db_index=True)
+    projeto_alocado = models.ForeignKey(Projeto, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    def __str__(self):
+        return f"{self.produto.descricao} (S/N: {self.numero_serie})"
 
 class Atividade(models.Model):
     atividade_choices = [
@@ -164,20 +175,27 @@ class Atividade(models.Model):
         ('MA', 'MANUTENÇÃO'),
     ]
     situacao_choices = [
-        ('P', 'PENDENTE'),  
+        ('P', 'PENDENTE'),
         ('C', 'FINALIZADA'),
     ]
+
     dataInicial = models.DateTimeField()
-    dataFinal = models.DateTimeField()
+    dataFinal = models.DateTimeField(null=True, blank=True)
     responsavel = models.ForeignKey(User, on_delete=models.CASCADE)
     projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE)
     tipoAtividade = models.CharField(choices=atividade_choices, max_length=2)
-    situacao = models.CharField(choices=situacao_choices, max_length=1)
+    situacao = models.CharField(choices=situacao_choices, max_length=1, default='P')
+    observacoes = models.TextField(blank=True)
+    excluido = models.BooleanField(default=False)
 
-class produtoFabricadoAtividade(models.Model):
-    atividade = models.ForeignKey(Atividade, on_delete=models.CASCADE)
-    produtoFabricado = models.ForeignKey(ProdutoFabricado, on_delete=models.CASCADE)
-    quantidade = models.DecimalField(max_digits=10, decimal_places=4)
+    equipamentos = models.ManyToManyField(
+        Equipamento,
+        blank=True, 
+        related_name='atividades' 
+    )
+
+    def __str__(self):
+        return f"{self.get_tipoAtividade_display()} - {self.projeto.nome}"
 
 class Problema(models.Model):
     idProblema = models.AutoField(primary_key=True)

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Fornecedor, Item, MateriaPrima, ProdutoFabricado, EstruturaProduto, Projeto, Demanda, Atividade, produtoFabricadoAtividade, OrdemServico
+from .models import Fornecedor, Item, MateriaPrima, ProdutoFabricado, EstruturaProduto, Projeto, Demanda, Atividade, OrdemServico, Equipamento
 
 @admin.register(OrdemServico)
 class OrdemServicoAdmin(admin.ModelAdmin):
@@ -11,23 +11,21 @@ class OrdemServicoAdmin(admin.ModelAdmin):
 
 @admin.register(Atividade)
 class AtividadeAdmin(admin.ModelAdmin):
-    list_display = ('projeto', 'tipoAtividade', 'situacao', 'dataInicial', 'dataFinal', 'responsavel')
-    search_fields = ('projeto__nome', 'responsavel__username')
-    list_filter = ('tipoAtividade', 'situacao', 'responsavel')
+    list_display = ('tipoAtividade', 'dataInicial', 'dataFinal', 'responsavel', 'projeto', 'situacao')
+    search_fields = ('responsavel__username', 'projeto__nome')
+    list_filter = ('tipoAtividade', 'situacao', 'dataInicial', 'dataFinal')
     list_per_page = 20
-    ordering = ('-dataInicial',)
 
-@admin.register(produtoFabricadoAtividade)
-class produtoFabricadoAtividadeAdmin(admin.ModelAdmin):
-    list_display = ('atividade', 'produtoFabricado', 'quantidade')
-    search_fields = ('atividade__projeto__nome', 'produtoFabricado__codigo_item')
-    list_filter = ('atividade__tipoAtividade', 'produtoFabricado')
-    list_per_page = 20
-    ordering = ('-atividade',)
+@admin.register(Equipamento)
+class EquipamentoAdmin(admin.ModelAdmin):
+    list_display = ('produto', 'numero_serie', 'projeto_alocado')
+    search_fields = ('produto__codigo_item', 'numero_serie', 'projeto_alocado__nome')
+    list_filter = ('projeto_alocado',)
+    list_per_page = 20  
 
 @admin.register(Demanda)
 class DemandaAdmin(admin.ModelAdmin):
-    list_display = ('produto', 'quantidade', 'projeto')
+    list_display = ('produto', 'quantidade', 'projeto', 'finalizado')
     search_fields = ('projeto_nome', 'produto__codigo_item')
     list_filter = ('projeto',)
     list_per_page = 20

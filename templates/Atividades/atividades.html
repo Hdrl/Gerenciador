@@ -5,15 +5,29 @@
 
 {% block content %}
 <div class="container-fluid p-4">
-    <h1 class="mt-4 mb-4">Cadastro de {{verbose_name_plural | title}}</h1>
-
     <div class="card shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center">
             <span>Listagem de {{verbose_name_plural}}</span>
-            <a href="{% url link_adcionar %}" class="btn btn-dark">
-                <i class="bi bi-plus-circle-fill"></i>    
-                Adcionar {{verbose_name}}
-            </a>
+            <div>
+                <a href="{% url link_adcionar %}" class="btn btn-dark">
+                    <i class="bi bi-plus-circle-fill"></i>    
+                    Adcionar
+                </a>
+                <a href="#" class="btn btn-dark" id="editar" data-url-template="{% url 'atividades:editar_atividade' '0' %}">
+                    <i class="bi bi-pencil-square"></i>    
+                    Editar
+                </a>
+                <a href="#" class="btn btn-dark" id="excluir" data-url-template="{% url 'atividades:excluir_atividade' '0' %}">
+                    <i class="bi bi-x-circle-fill"></i>    
+                    Excluir
+                </a>
+                </a>
+                <a href="{% url link_adcionar %}" class="btn btn-dark" id="finalizar">
+                    <i class="bi bi-check-circle-fill"></i>    
+                    Finalizar
+                </a>
+            </div>
+            
         </div>
 
         <div class="card-body">
@@ -27,7 +41,7 @@
                         </tr>
                     </thead>
                         {% for query in querys %}
-                            <tr>
+                            <tr class="registro" data-atividade-id="{{ query.id }}">
                                 {% for field_name in field_names %}
                                     <td>
                                         {{ query|get_display:field_name| default:"-"  }}
@@ -42,4 +56,7 @@
     </div>
 
 </div>
+{% block scripts %}
+<script src="{% static 'Atividades/js/listar_atividade.js' %}"></script>
+{% endblock %}
 {% endblock %}

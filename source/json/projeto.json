@@ -1,0 +1,330 @@
+{
+  "myArrayList": [
+    {
+      "myHashMap": {
+        "idProjeto": 82,
+        "cliente": "DIME",
+        "apelido": "DIME - RJ",
+        "parceiro": "FLSOFT",
+        "descStatus": "ATIVO"
+      }
+    },
+    {
+      "myHashMap": {
+        "idProjeto": 80,
+        "cliente": "DACLE",
+        "apelido": "DACLE - SP",
+        "parceiro": "BERTOLINI",
+        "descStatus": "ATIVO"
+      }
+    },
+    {
+      "myHashMap": {
+        "idProjeto": 66,
+        "cliente": "CIA IVAIPORÃ",
+        "apelido": "CIA IVAIPORÃ",
+        "bancoDeDados": "ORACLE",
+        "parceiro": "SCHEFFER",
+        "sistemaOperacional": "WINDOWS",
+        "descStatus": "EM ANDAMENTO",
+        "integracaoCliente": "SOAP",
+        "integracaoMFC": "REST"
+      }
+    },
+    {
+      "myHashMap": {
+        "idProjeto": 68,
+        "cliente": "DISTRIMED PIMENTA",
+        "apelido": "DISTRIMED PIMENTA",
+        "bancoDeDados": "POSTGRES",
+        "parceiro": "FLSOFT",
+        "sistemaOperacional": "WINDOWS",
+        "descStatus": "ATIVO"
+      }
+    },
+    {
+      "myHashMap": {
+        "idProjeto": 79,
+        "cliente": "DIMACOL - BA",
+        "apelido": "DIMACOL - BA",
+        "bancoDeDados": "ORACLE",
+        "parceiro": "BERTOLINI",
+        "sistemaOperacional": "WINDOWS",
+        "descStatus": "ATIVO",
+        "integracaoCliente": "BANCO DE DADOS",
+        "integracaoMFC": "BANCO DE DADOS"
+      }
+    },
+    {
+      "myHashMap": {
+        "idProjeto": 78,
+        "cliente": "CERVOSUL - RS",
+        "apelido": "CERVOSUL - RS",
+        "bancoDeDados": "ORACLE",
+        "parceiro": "FLSOFT",
+        "sistemaOperacional": "WINDOWS",
+        "descStatus": "ATIVO",
+        "integracaoCliente": "SOAP",
+        "integracaoMFC": "REST"
+      }
+    },
+    {
+      "myHashMap": {
+        "idProjeto": 77,
+        "cliente": "DP4",
+        "apelido": "DP4",
+        "bancoDeDados": "ORACLE",
+        "parceiro": "FLSOFT",
+        "sistemaOperacional": "WINDOWS",
+        "descStatus": "ATIVO",
+        "integracaoCliente": "SOAP",
+        "integracaoMFC": "REST"
+      }
+    },
+    {
+      "myHashMap": {
+        "idProjeto": 76,
+        "cliente": "MULTIMED DIST DE MEDICAMENTOS LTDA",
+        "apelido": "MULTIMED",
+        "bancoDeDados": "ORACLE",
+        "parceiro": "FLSOFT",
+        "sistemaOperacional": "WINDOWS",
+        "descStatus": "ATIVO",
+        "integracaoCliente": "SOAP",
+        "integracaoMFC": "REST"
+      }
+    },
+    {
+      "myHashMap": {
+        "idProjeto": 75,
+        "cliente": "BLUMED DIST DE MEDICAMENTOS LTDA",
+        "apelido": "BLUMED",
+        "bancoDeDados": "ORACLE",
+        "parceiro": "FLSOFT",
+        "sistemaOperacional": "WINDOWS",
+        "descStatus": "ATIVO",
+        "integracaoCliente": "SOAP",
+        "integracaoMFC": "REST"
+      }
+    },
+    {
+      "myHashMap": {
+        "idProjeto": 74,
+        "cliente": "MEDCHAP.SC",
+        "apelido": "MEDCHAP.SC",
+        "bancoDeDados": "ORACLE",
+        "parceiro": "FLSOFT",
+        "sistemaOperacional": "WINDOWS",
+        "descStatus": "ATIVO",
+        "integracaoCliente": "SOAP",
+        "integracaoMFC": "REST"
+      }
+    },
+    {
+      "myHashMap": {
+        "idProjeto": 73,
+        "cliente": "MEDCHAP.PR",
+        "apelido": "MEDCHAP.PR",
+        "bancoDeDados": "ORACLE",
+        "parceiro": "BERTOLINI",
+        "sistemaOperacional": "WINDOWS",
+        "descStatus": "ATIVO",
+        "integracaoCliente": "SOAP",
+        "integracaoMFC": "REST"
+      }
+    },
+    {
+      "myHashMap": {
+        "idProjeto": 69,
+        "cliente": "SEQUOIA",
+        "apelido": "SEQUOIA",
+        "parceiro": "FLSOFT",
+        "descStatus": "EM ANDAMENTO"
+      }
+    },
+    {
+      "myHashMap": {
+        "idProjeto": 63,
+        "cliente": "CLAMED",
+        "apelido": "CLAMED",
+        "bancoDeDados": "POSTGRES",
+        "parceiro": "FLSOFT",
+        "sistemaOperacional": "LINUX",
+        "descStatus": "EM ANDAMENTO",
+        "integracaoCliente": "NÃO POSSUI",
+        "integracaoMFC": "REST"
+      }
+    },
+    {
+      "myHashMap": {
+        "idProjeto": 64,
+        "cliente": "VIA VAREJO- JUNDIAÍ",
+        "apelido": "VIA VAREJO",
+        "parceiro": "PITNEY BOWES",
+        "descStatus": "ATIVO",
+        "integracaoCliente": "NÃO POSSUI",
+        "integracaoMFC": "NÃO POSSUI"
+      }
+    },
+    {
+      "myHashMap": {
+        "idProjeto": 71,
+        "cliente": "SMARTPICKING",
+        "apelido": "SMARTPICKING",
+        "parceiro": "FLSOFT",
+        "sistemaOperacional": "WINDOWS",
+        "descStatus": "ATIVO",
+        "integracaoCliente": "NÃO POSSUI",
+        "integracaoMFC": "NÃO POSSUI"
+      }
+    },
+    {
+      "myHashMap": {
+        "idProjeto": 70,
+        "cliente": "UNILIDER ES",
+        "apelido": "UNILIDER ES",
+        "parceiro": "BERTOLINI",
+        "descStatus": "EM ANDAMENTO"
+      }
+    },
+    {
+      "myHashMap": {
+        "idProjeto": 90,
+        "cliente": "BRW",
+        "apelido": "BRW",
+        "parceiro": "BERTOLINI",
+        "descStatus": "ATIVO"
+      }
+    },
+    {
+      "myHashMap": {
+        "idProjeto": 89,
+        "cliente": "QUATTROR",
+        "apelido": "QUATTROR",
+        "parceiro": "BERTOLINI",
+        "descStatus": "ATIVO",
+        "integracaoMFC": "NÃO POSSUI"
+      }
+    },
+    {
+      "myHashMap": {
+        "idProjeto": 67,
+        "cliente": "ULTRAFARMA",
+        "apelido": "ULTRAFARMA",
+        "parceiro": "AGUIA",
+        "descStatus": "EM ANDAMENTO"
+      }
+    },
+    {
+      "myHashMap": {
+        "idProjeto": 81,
+        "cliente": "NOVAMED DISTRIBUIDORA DE MEDICAMENTOS",
+        "apelido": "NOVAMED",
+        "bancoDeDados": "ORACLE",
+        "parceiro": "FLSOFT",
+        "sistemaOperacional": "WINDOWS",
+        "descStatus": "EM ANDAMENTO",
+        "integracaoCliente": "BANCO DE DADOS",
+        "integracaoMFC": "NÃO POSSUI"
+      }
+    },
+    {
+      "myHashMap": {
+        "idProjeto": 88,
+        "cliente": "CONTABILISTA",
+        "apelido": "CONTABILISTA",
+        "parceiro": "BERTOLINI",
+        "descStatus": "ATIVO"
+      }
+    },
+    {
+      "myHashMap": {
+        "idProjeto": 87,
+        "cliente": "LONDRIVET",
+        "apelido": "LONDRIVET",
+        "parceiro": "FLSOFT",
+        "descStatus": "ATIVO"
+      }
+    },
+    {
+      "myHashMap": {
+        "idProjeto": 62,
+        "cliente": "MEGARIO",
+        "apelido": "MEGARIO",
+        "bancoDeDados": "POSTGRES",
+        "parceiro": "BERTOLINI",
+        "sistemaOperacional": "WINDOWS",
+        "descStatus": "EM ANDAMENTO",
+        "integracaoCliente": "REST",
+        "integracaoMFC": "REST"
+      }
+    },
+    {
+      "myHashMap": {
+        "idProjeto": 65,
+        "cliente": "AMIGÃO",
+        "apelido": "AMIGÃO",
+        "parceiro": "PITNEY BOWES",
+        "descStatus": "EM ANDAMENTO",
+        "integracaoCliente": "REST",
+        "integracaoMFC": "REST"
+      }
+    },
+    {
+      "myHashMap": {
+        "idProjeto": 86,
+        "cliente": "DRL DISTRIBUIDORA ATACADISTA",
+        "apelido": "DRL",
+        "parceiro": "BERTOLINI",
+        "descStatus": "ATIVO"
+      }
+    },
+    {
+      "myHashMap": {
+        "idProjeto": 85,
+        "cliente": "GUANABARA",
+        "apelido": "GUANABARA",
+        "parceiro": "SCHEFFER",
+        "descStatus": "ATIVO"
+      }
+    },
+    {
+      "myHashMap": {
+        "idProjeto": 84,
+        "cliente": "SCHEFFER FEIRA",
+        "apelido": "SCHEFFER",
+        "bancoDeDados": "ORACLE",
+        "parceiro": "SCHEFFER",
+        "sistemaOperacional": "WINDOWS",
+        "descStatus": "ATIVO",
+        "integracaoCliente": "NÃO POSSUI",
+        "integracaoMFC": "NÃO POSSUI"
+      }
+    },
+    {
+      "myHashMap": {
+        "idProjeto": 83,
+        "cliente": "BERTOLINI - FEIRA",
+        "apelido": "BERTOLINI",
+        "bancoDeDados": "ORACLE",
+        "parceiro": "BERTOLINI",
+        "sistemaOperacional": "WINDOWS",
+        "descStatus": "ATIVO",
+        "integracaoCliente": "NÃO POSSUI",
+        "integracaoMFC": "NÃO POSSUI"
+      }
+    },
+    {
+      "myHashMap": {
+        "idProjeto": 72,
+        "cliente": "UNILIDER RJ",
+        "apelido": "UNILIDER RJ",
+        "bancoDeDados": "POSTGRES",
+        "parceiro": "BERTOLINI",
+        "sistemaOperacional": "WINDOWS",
+        "descStatus": "EM ANDAMENTO",
+        "integracaoMFC": "REST"
+      }
+    }
+  ]
+}
