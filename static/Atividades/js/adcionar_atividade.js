@@ -5,13 +5,38 @@ if (window.adcionarAtividadeScriptLoaded) {
     window.adcionarAtividadeScriptLoaded = true; 
 
     document.addEventListener('DOMContentLoaded', function() {
+        const audioSucesso = document.getElementById('audioSucesso');
+        const audioErro = document.getElementById('audioErro');
+
         const form = document.getElementById('form-adcionar');
         if (!form) {
             return; 
         }
 
+        // --- INÍCIO DA MODIFICAÇÃO (LocalStorage) ---
+        // 1. Cria uma chave de armazenamento única para esta página
+        const storageKey = 'activitySerialItems_' + window.location.pathname;
+        // --- FIM DA MODIFICAÇÃO ---
+
+        function inicializarAudio() {
+            audioSucesso.load();
+            audioErro.load();
+        }
+        function tocarSucesso() {
+            audioErro.pause();           // Para o som de erro se estiver tocando
+            audioErro.currentTime = 0;   // Reinicia o áudio de erro
+            audioSucesso.currentTime = 0; // Reinicia o áudio de sucesso
+            audioSucesso.play();
+        }
+        function tocarErro() {
+            audioSucesso.pause();
+            audioSucesso.currentTime = 0;
+            audioErro.currentTime = 0;
+            audioErro.play();
+        }
+        document.body.addEventListener('click', inicializarAudio, { once: true });
+        document.body.addEventListener('keydown', inicializarAudio, { once: true });
         // --- Pega todos os elementos necessários ---
-        // --- MODIFICADO: Pega as DUAS URLs de API ---
         const verificarEmbalagemURL = form.dataset.verificarSerialUrl; // API para 'E'
         const verificarMontagemURL = form.dataset.verificarMontagemUrl; // API para 'M'
         
@@ -22,11 +47,10 @@ if (window.adcionarAtividadeScriptLoaded) {
         const serialInput = document.getElementById('id_serial');
         const tableBody = document.getElementById('serial-table-body');
         const salvar = document.getElementById('salvar');
-        
         // --- Gerenciamento do Input Oculto ---
         const hiddenInputId = 'id_serials_list_json';
         let hiddenInput = document.getElementById(hiddenInputId);
-
+        
         if (!hiddenInput) {
             console.log("Criando hidden input...");
             hiddenInput = document.createElement('input');
@@ -55,13 +79,24 @@ if (window.adcionarAtividadeScriptLoaded) {
             tableBody.appendChild(tr);
         }
 
-        // --- LÓGICA DE CARREGAMENTO INICIAL (PARA PÁGINA DE EDITAR) ---
+        // --- LÓGICA DE CARREGAMENTO INICIAL (MODIFICADA PARA LocalStorage) ---
+        // 2. Tenta carregar dados do localStorage
+        const storedItems = localStorage.getItem(storageKey);
+        let dataToParse = initialSerialsData || '[]';
+
+        // Se o localStorage tiver dados (ex: refresh), use-o.
+        // Se não, use os dados do servidor (ex: página de editar).
+        if (storedItems) {
+            dataToParse = storedItems;
+        }
+
         try {
-            addedItems = JSON.parse(initialSerialsData || '[]');
+            addedItems = JSON.parse(dataToParse);
         } catch (e) {
             console.warn("Nenhum serial inicial ou JSON inválido.", e);
             addedItems = [];
         }
+        // --- FIM DA MODIFICAÇÃO ---
 
         // Atualiza o input oculto com os valores iniciais
         hiddenInput.value = JSON.stringify(addedItems);
@@ -81,7 +116,6 @@ if (window.adcionarAtividadeScriptLoaded) {
                 event.preventDefault();
             }
         });
-        
 
         // --- Listener principal para adicionar seriais (com API) ---
         serialInput.addEventListener('keydown', async function(event) {
@@ -99,6 +133,7 @@ if (window.adcionarAtividadeScriptLoaded) {
                 // Checagem de duplicado (feita antes da API)
                 if (addedItems.some(item => item.serial === serialValue)) {
                     Swal.fire('Atenção', 'Este serial já foi adicionado.', 'warning');
+                    tocarErro();
                     serialInput.value = '';
                     serialInput.focus();
                     return;
@@ -129,6 +164,7 @@ if (window.adcionarAtividadeScriptLoaded) {
 
                     } catch (error) {
                         Swal.fire('Verificação Falhou', error.message, 'error');
+                        tocarErro();
                         serialInput.focus();
                         serialInput.select();
                         return; // Para a execução
@@ -158,6 +194,7 @@ if (window.adcionarAtividadeScriptLoaded) {
 
                     } catch (error) {
                         Swal.fire('Verificação Falhou', error.message, 'error');
+                        tocarErro();
                         serialInput.focus();
                         serialInput.select();
                         return; // Para a execução
@@ -169,6 +206,7 @@ if (window.adcionarAtividadeScriptLoaded) {
                 // Se for MONTAGEM ('M'), precisa ter selecionado um produto
                 if (tipoAtividadeValue === 'M' && produtoId === '') {
                     Swal.fire('Atenção', 'Selecione um Produto primeiro.', 'warning');
+                    tocarErro();
                     return;
                 }
 
@@ -178,10 +216,15 @@ if (window.adcionarAtividadeScriptLoaded) {
                 
                 // Atualiza o input oculto IMEDIATAMENTE
                 hiddenInput.value = JSON.stringify(addedItems);
+
+                // --- INÍCIO DA MODIFICAÇÃO (LocalStorage) ---
+                // 3. Salva no localStorage a cada adição
+                localStorage.setItem(storageKey, JSON.stringify(addedItems));
+                // --- FIM DA MODIFICAÇÃO ---
                 
                 // Desenha na tabela
                 addSerialToTable(novoItem); 
-                
+                tocarSucesso();
                 serialInput.value = '';
                 serialInput.focus();
             }
@@ -207,6 +250,11 @@ if (window.adcionarAtividadeScriptLoaded) {
             // Atualiza o input oculto IMEDIATAMENTE
             hiddenInput.value = JSON.stringify(addedItems);
 
+            // --- INÍCIO DA MODIFICAÇÃO (LocalStorage) ---
+            // 4. Salva no localStorage a cada remoção
+            localStorage.setItem(storageKey, JSON.stringify(addedItems));
+            // --- FIM DA MODIFICAÇÃO ---
+
             // Remove da tabela
             deleteButton.closest('tr').remove();
 
@@ -227,6 +275,12 @@ if (window.adcionarAtividadeScriptLoaded) {
             event.preventDefault();
             // Opcional: garantir que o valor está atualizado (já deve estar)
             hiddenInput.value = JSON.stringify(addedItems);
+
+            // --- INÍCIO DA MODIFICAÇÃO (LocalStorage) ---
+            // 5. Limpa o localStorage ANTES de submeter
+            localStorage.removeItem(storageKey);
+            // --- FIM DA MODIFICAÇÃO ---
+
             form.submit();
         });
     });

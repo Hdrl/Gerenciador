@@ -47,6 +47,14 @@
         </div>
     </div>
 </div>
+<audio id="audioSucesso">
+  <source src="{% static 'Atividades/audio/sucess.mp3' %}" type="audio/mp3">
+  Seu navegador não suporta o elemento de áudio.
+</audio>
+<audio id="audioErro">
+  <source src="{% static 'Atividades/audio/error.mp3' %}" type="audio/mp3">
+  Seu navegador não suporta o elemento de áudio.
+</audio>
 {% endblock %}
 {% block scripts %}
 <script src="{% static 'Atividades/js/adcionar_atividade.js' %}">
