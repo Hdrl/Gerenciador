@@ -29,8 +29,26 @@
             <li class="nav-item">
                 <a href="{% url 'atividades:index' %}" class="nav-link text-white" aria-current="page">
                     <i class="bi bi-house-door me-2"></i>
-                    <span class="sidebar-text">Início</span>
+                    <span class="sidebar-text">Projeto</span>
                 </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'atividades:index' %}"  class="nav-link text-white" aria-current="page">
+                    <i class="bi bi-box-seam-fill me-2"></i>
+                    <span class="sidebar-text">Demanda</span>
+                </a>
+            </li>
+            <li>
+                <a href="#submenu-tarefas"  data-bs-toggle="collapse" class="nav-link text-white">
+                    <i class="bi bi-hammer me-2"></i>
+                    <span class="sidebar-text">Produção</span>
+                    <i class="bi bi-chevron-down sidebar-text ms-auto"></i>
+                </a>
+                <div class="collapse" id="submenu-tarefas">
+                    <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small ms-4">
+                        <li><a href="#" class="link-light rounded ms-3">Ordem Produção</a></li>
+                    </ul>
+                </div>
             </li>
             <li>
                 <a href="/admin/" class="nav-link text-white">

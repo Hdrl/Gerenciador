@@ -27,9 +27,11 @@
 {% block content %}
 {% csrf_token %}
 <div class="container mt-4">
-    <h3>Demandas Pendentes</h3>
+    <div class="d-flex justify-content-between">
+        <h3>Demandas Pendentes</h3>
+        <a href="#" id="add-projeto-link" class="btn btn-dark">+ Adcionar Projeto</a>
+    </div>
     <p class="text-muted">Selecione um projeto para ver mais detalhes.</p>
-
     <div class="d-flex flex-wrap gap-3">
         {% for projeto in projetos %}
             {% with demandas_pendente=projeto.todas_demandas|pendentes %}
