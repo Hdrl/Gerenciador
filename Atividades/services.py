@@ -1,5 +1,4 @@
 from .models import Equipamento, Atividade
-# Importe seu model de Produto
 from Atividades.models import ProdutoFabricado 
 
 def processar_lista_seriais(atividade, serials_list, form):

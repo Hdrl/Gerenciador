@@ -8,7 +8,6 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.CustomLogoutView.as_view(), name='logout'),
     path('ordemservico/', views.ordem_servico, name='lista_os'),
-    path('ordemservico/novo/', views.formulario_adcionar_ordemservico, name='adcionar_ordemservico'),
     path('projeto/', views.cadastro_projeto, name='cadastro_projeto'),
     path('projeto/novo/', views.formulario_adcionar_projeto, name='adcionar_projeto'),
     path('demanda/', views.cadastro_demanda, name='cadastro_demanda'),

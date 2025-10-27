@@ -1,5 +1,6 @@
 from django.db import models, transaction
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 class Fornecedor(models.Model):
     razao_social = models.CharField(max_length=200, unique=True)
@@ -127,7 +128,7 @@ class Projeto(models.Model):
     ]
     nome = models.CharField(max_length=100)
     descricao = models.TextField(null=True, blank=True)
-    status = models.CharField(choices=status_choices, default='N', max_length=2)
+    status = models.CharField(choices=status_choices, default='NI', max_length=2)
     data_inicio = models.DateTimeField(null=True, blank=True)
     data_fim = models.DateTimeField(null=True, blank=True)
 
@@ -197,25 +198,115 @@ class Atividade(models.Model):
     def __str__(self):
         return f"{self.get_tipoAtividade_display()} - {self.projeto.nome}"
 
-class Problema(models.Model):
-    idProblema = models.AutoField(primary_key=True)
-    descricao = models.CharField(max_length=100)
+class DefeitoComponente(models.Model):
+    componente = models.ForeignKey(Item, on_delete=models.PROTECT, related_name='registro_defeitos')
+    defeito = models.CharField(max_length=255)
+    efeito = models.CharField(max_length=255, blank=True)
+    causa = models.CharField(max_length=255, blank=True)
+        
+class Empresa(models.Model):
+    razao_social = models.CharField(max_length=255, verbose_name='Razão social')
+    nome_fantasia = models.CharField(max_length=150, verbose_name='Nome Fantasia')
+    cnpj = models.CharField(max_length=18, unique=True, verbose_name="CNPJ")
+    inscricao_statual = models.CharField(max_length=20, null=True, blank=True, verbose_name='Inscrição Estadual(IE)', help_text="Obrigatório para emissão de NF-e de produto.")
+    data_cadastro = models.DateTimeField(verbose_name="Data de Cadastro", default=timezone.now, editable=False)
+
+    class Meta:
+        ordering = ['nome_fantasia', 'razao_social']
+    
+    def __str__(self):
+        """
+        Retorna o nome da empresa em formato Title Case.
+        Dá preferência ao Nome Fantasia; se não houver, usa a Razão Social.
+        """
+        nome_para_exibir = self.nome_fantasia if self.nome_fantasia else self.razao_social
+        return (nome_para_exibir or "").title()
+    
+
+class Endereco(models.Model):
+    id_empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE, related_name="enderecos", verbose_name="Empresa")
+    apelido_endereco = models.CharField(max_length=100, blank=True, null=True)
+    cep = models.CharField(max_length=9, verbose_name='CEP')
+    numero = models.CharField(max_length=20, verbose_name='Número')
+    complemento = models.CharField(max_length=100)
+    bairro = models.CharField(max_length=100)
+    cidade = models.CharField(max_length=100)
+    uf = models.CharField(max_length=2, verbose_name='UF')
+    
+    class Meta:
+        verbose_name = "Endereço"
+        verbose_name_plural = "Endereços"
+        
+    def __str__(self):
+        if self.apelido_endereco:
+            return f"{self.apelido_endereco}({self.id_empresa.nome_fantasia})"
+        return f"{self.numero} - {self.cidade}({self.id_empresa.nome_fantasia})"
+
+class Transportadora(models.Model):
+    razao_social = models.CharField(max_length=255, verbose_name='Razão social')
+    nome_contato =  models.CharField(max_length=100, verbose_name='Nome para Contato', blank=True)
+    telefone = models.CharField(blank=True, max_length=20)
+    observacoes = models.TextField(blank=True, verbose_name="Observações")
+    ativo = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.razao_social}"
+
+class OrdemProducao(models.Model):
+    pass
+
+class OrdemCompra(models.Model):
+    pass
+
+class Transporte(models.Model):
+    remetente = models.ForeignKey(
+        Endereco,
+        on_delete=models.PROTECT,
+        related_name="envios_como_remetente",
+        verbose_name="Remetente"
+    )
+    destinatario = models.ForeignKey(
+        Endereco,
+        on_delete=models.PROTECT,
+        related_name="envios_como_destinatario",
+        verbose_name="Destinatário"
+    )
+
+    aos_cuidados = models.CharField(max_length=100, verbose_name="A/C (Aos Cuidados de)", blank=True)
+    
+    def __str__(self):
+        return f"{self.destinatario}"
 
 class OrdemServico(models.Model):
-    localExecucao_choices = [
-        ('E', 'Empresa'),
-        ('C', 'Cliente'),
-    ]
-    solicitante = models.CharField(max_length=100)
-    localExecucao = models.CharField(choices=localExecucao_choices, max_length=1)
-    Transportadora = models.CharField(max_length=100)
-    codigoRastreio = models.CharField(max_length=100, null=True)
-    dataInicio = models.DateTimeField()
-    dataTermino = models.DateTimeField(null=True)
-    NFEntrada = models.CharField(max_length=50, null=True)
-    NFSaida = models.CharField(max_length=50, null=True)
-    defeitoInformado = models.TextField()
-    diagnosticoTecnico = models.TextField(null=True)
-    servicoRealizado = models.TextField(null=True)
-    tecnicoResponsavel = models.ForeignKey(User, on_delete=models.CASCADE)
+    solicitante = models.ForeignKey(Empresa, on_delete=models.PROTECT)
+    local_execucao = models.ForeignKey(Endereco, on_delete=models.PROTECT)
+    data_inicio = models.DateTimeField(default=timezone.now, editable=False)
+    dataTermino = models.DateTimeField(blank=True, null=True)
+    nota_entrada = models.CharField(max_length=50,blank=True, null=True)
+    nota_saida = models.CharField(max_length=50,blank=True, null=True)
+    tecnico_responsavel = models.ManyToManyField(User, related_name='ordem_serivico')
     projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE, related_name='ordens_servico')
+    transporte = models.ForeignKey(Transporte, on_delete=models.PROTECT)
+    transportadora_padrao = models.ForeignKey(Transportadora, on_delete=models.PROTECT ,verbose_name="Transportadora_Padrão")
+    codigo_rastreio = models.CharField(max_length=50, verbose_name="Cód. Rastreio", blank=True)
+
+class ServicoRealizado(models.Model):
+    acao_choices = (
+        ('T', 'TROCAR'),
+        ('M', 'MANUTENÇÃO'),
+        ('J', 'JUMPER'),
+        ('R', 'RESOLDAR')
+    )
+    acao = models.CharField(choices=acao_choices, max_length=1)
+    componente = models.ForeignKey(Item, on_delete=models.PROTECT)
+    obeservacao = models.TextField()
+
+class DefeitoEquipamento(models.Model):
+    ordem_servico = models.ForeignKey(OrdemServico, on_delete=models.PROTECT)
+    equipamento = models.ForeignKey(Equipamento, on_delete=models.PROTECT, related_name='historico_defeitos')
+    falha = models.ForeignKey(DefeitoComponente, on_delete=models.PROTECT, related_name='defeitos_equipamentos')
+    acao_necessaria = models.ForeignKey(ServicoRealizado, on_delete=models.PROTECT)
+    data_identificacao = models.DateTimeField(default=timezone.now, editable=False, verbose_name='Data Identificado')
+    
+    class Meta:
+        ordering = ['equipamento']

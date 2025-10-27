@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404, render, redirect
 from django.db.models import Prefetch
-from Atividades.models import  Problema, Projeto, Demanda, OrdemServico, Atividade, Equipamento, ProdutoFabricado
-from Atividades.forms import ProjetoForm, DemandaForm, OrdemServicoForm, AtividadeForm
+from Atividades.models import Projeto, Demanda, OrdemServico, Atividade, Equipamento, ProdutoFabricado
+from Atividades.forms import ProjetoForm, DemandaForm, AtividadeForm
 from django.http import JsonResponse
 from django.contrib import messages
 import json
@@ -12,6 +12,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from Atividades.services import processar_lista_seriais
+from Atividades.managers import ModelManager
 
 def login_view(request):
     if request.user.is_authenticated:
@@ -56,32 +57,8 @@ def index(request):
 
 @login_required
 def ordem_servico(request):
-    ordens_de_servico = [
-        {'id': 1024, 'cliente': 'João da Silva', 'equipamento': 'Notebook Dell Vostro', 'data': '2025-09-28', 'status': 'Concluído'},
-        {'id': 1025, 'cliente': 'Maria Oliveira', 'equipamento': 'Celular Samsung S23', 'data': '2025-09-29', 'status': 'Em Andamento'},
-        {'id': 1026, 'cliente': 'Pedro Martins', 'equipamento': 'Impressora HP', 'data': '2025-09-30', 'status': 'Aguardando Peças'},
-        {'id': 1027, 'cliente': 'Ana Costa', 'equipamento': 'Tablet iPad Air', 'data': '2025-10-01', 'status': 'Orçamento Aprovado'},
-    ]
-
-    context = {
-        'ordens_de_servico': ordens_de_servico,
-    }
-    return render(request, 'Atividades/ordem_servico.html', context)
-
-@login_required
-def formulario_adcionar_ordemservico(request):
-    if request.method == 'POST':
-        form = OrdemServicoForm(request.POST)
-        if form.is_valid():
-            form.save()
-            # Redirecionar para a página de listagem de projetos após salvar
-            return redirect('atividades:cadastro_projeto')
-    context = {
-        'form': OrdemServicoForm(),
-        'verbose_name': OrdemServico._meta.verbose_name,
-    }
-    return render(request, 'Atividades/adcionar_modelo.html', context) 
-#post {"data1":"2025-09-30 00:00:01","data2":"2025-10-01 00:00:01"}
+    ordem_servico = ModelManager(OrdemServico)
+    return render(request, 'Atividades/ordem_servico.html', ordem_servico.listar())
 
 @login_required
 def cadastro_projeto(request):
@@ -176,6 +153,7 @@ def listar_atividade(request):
     }
     return render(request, 'Atividades/atividades.html', context)
 
+@login_required
 def adcionar_atividade(request):
     if request.method == 'POST':
         form = AtividadeForm(request.POST, user=request.user)
@@ -216,7 +194,7 @@ def adcionar_atividade(request):
     }
     return render(request, 'Atividades/adcionar_modelo.html', context)
 
-
+@login_required
 def editar_atividade(request, id):
     atividade = get_object_or_404(Atividade, id=id)
 
@@ -322,7 +300,6 @@ def verificar_equipamento_status(request):
     except Exception as e:
         return JsonResponse({'status': 'erro', 'message': str(e)}, status=500)
     
-
 @login_required
 def verificar_serial_montagem(request):
     serial_num = request.GET.get('serial', None)

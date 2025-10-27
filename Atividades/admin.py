@@ -1,13 +1,37 @@
 from django.contrib import admin
-from .models import Fornecedor, Item, MateriaPrima, ProdutoFabricado, EstruturaProduto, Projeto, Demanda, Atividade, OrdemServico, Equipamento
+from .models import Transporte ,Fornecedor, Item, MateriaPrima, ProdutoFabricado, EstruturaProduto, Projeto, Demanda, Atividade, OrdemServico, Equipamento, Endereco, Empresa, Transportadora, DefeitoComponente
+
+@admin.register(Transportadora)
+class TransportadoraoAdmin(admin.ModelAdmin):
+    list_display = ('razao_social', 'nome_contato', 'telefone', 'observacoes')
+    list_per_page = 20
+
+@admin.register(Transporte)
+class TransporteAdmin(admin.ModelAdmin):
+    list_per_page = 20
 
 @admin.register(OrdemServico)
 class OrdemServicoAdmin(admin.ModelAdmin):
-    list_display = ('solicitante', 'localExecucao', 'Transportadora', 'projeto', 'dataInicio', 'dataTermino')
-    search_fields = ('solicitante', 'Transportadora', 'projeto__nome')
-    list_filter = ('localExecucao', 'dataInicio', 'dataTermino')
+    list_display = ('solicitante', 'local_execucao', 'nota_entrada', 'nota_saida', 'projeto' , 'transporte')
     list_per_page = 20
-    ordering = ('-dataInicio',)
+
+@admin.register(DefeitoComponente)
+class DefeitoComponenteAdmin(admin.ModelAdmin):
+    list_display = ('componente', 'defeito', 'efeito', 'causa')
+    list_per_page = 20
+    ordering = ('componente',)
+
+@admin.register(Endereco)
+class EnderecoAdmin(admin.ModelAdmin):
+    list_display = ('id_empresa', 'apelido_endereco', 'cidade', 'uf')
+    list_per_page = 20
+    ordering = ('-uf',)
+
+@admin.register(Empresa)
+class EmpresaAdmin(admin.ModelAdmin):
+    list_display = ['razao_social', 'cnpj', 'data_cadastro']
+    list_per_page = 20
+    ordering = ('-data_cadastro',)
 
 @admin.register(Atividade)
 class AtividadeAdmin(admin.ModelAdmin):

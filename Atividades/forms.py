@@ -1,8 +1,8 @@
 from django import forms
-from Atividades.models import Projeto, Demanda, OrdemServico, Atividade, ProdutoFabricado
+from Atividades.models import Projeto, Demanda, Atividade, ProdutoFabricado
 from django.utils import timezone
 from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Row, Column, Submit
+from crispy_forms.layout import Layout, Row, Column
 
 class ProjetoForm(forms.ModelForm):
     class Meta:
@@ -17,14 +17,6 @@ class DemandaForm(forms.ModelForm):
     class Meta:
         model = Demanda
         fields = ['nome', 'quantidade', 'produto', 'projeto']
-
-class OrdemServicoForm(forms.ModelForm):
-    class Meta:
-        model = OrdemServico
-        fields = ['projeto', 'NFEntrada', 'defeitoInformado', 'localExecucao']
-        widgets = {
-            'data': forms.DateInput(attrs={'type': 'date'}),
-        }
 
 class AtividadeForm(forms.ModelForm):
     produto = forms.ModelChoiceField(
