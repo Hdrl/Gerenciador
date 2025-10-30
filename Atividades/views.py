@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404, render, redirect
 from django.db.models import Prefetch
-from Atividades.models import Projeto, Demanda, OrdemServico, Atividade, Equipamento, ProdutoFabricado
+from Atividades.models import OrdemProducao, Projeto, Demanda, OrdemServico, Atividade, Equipamento, ProdutoFabricado
 from Atividades.forms import ProjetoForm, DemandaForm, AtividadeForm
 from django.http import JsonResponse
 from django.contrib import messages
@@ -13,6 +13,65 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from Atividades.services import processar_lista_seriais
 from Atividades.managers import ModelManager
+from Atividades.serializers import Endereco, User, OrdemServicoSerializer, OrdemProducaoSerializer, ProjetoSerializer, ProdutoFabricadoSerializer, EnderecoSerializer, UserSerializer
+from rest_framework import viewsets  # type: ignore
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework import status
+
+class ProdutoFabricadoViewSet(viewsets.ModelViewSet):
+    queryset = ProdutoFabricado.objects.all()
+    serializer_class = ProdutoFabricadoSerializer
+
+class ProjetoViewSet(viewsets.ModelViewSet):
+    queryset = Projeto.objects.all()
+    serializer_class = ProjetoSerializer
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+class EnderecoViewSet(viewsets.ModelViewSet):  
+    queryset = Endereco.objects.all()
+    serializer_class = EnderecoSerializer
+
+class OrdemServicoViewSet(viewsets.ModelViewSet):
+    queryset = OrdemServico.objects.all()
+    serializer_class = OrdemServicoSerializer
+
+class OrdemProducaoViewSet(viewsets.ModelViewSet):
+    queryset = OrdemProducao.objects.all()
+    serializer_class = OrdemProducaoSerializer
+
+    # Action para: POST /api/ordens/{id}/liberar_producao/
+    @action(detail=True, methods=['post'])
+    def liberar_producao(self, request, pk=None):
+        op = self.get_object()
+        try:
+            op.liberar_producao() # Chama o método do models.py
+            serializer = self.get_serializer(op)
+            return Response(serializer.data)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Action para: POST /api/ordens/{id}/concluir_producao/
+    @action(detail=True, methods=['post'])
+    def concluir_producao(self, request, pk=None):
+        op = self.get_object()
+        quantidade_boa = request.data.get('quantidade_boa')
+        
+        if not quantidade_boa or int(quantidade_boa) <= 0:
+            return Response(
+                {'error': 'Quantidade produzida (quantidade_boa) é obrigatória.'}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            op.concluir_producao(int(quantidade_boa)) # Chama o método do models.py
+            serializer = self.get_serializer(op)
+            return Response(serializer.data)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 def login_view(request):
     if request.user.is_authenticated:

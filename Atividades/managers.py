@@ -18,5 +18,5 @@ class ModelManager:
             'verbose_name_plural': self.model._meta.verbose_name_plural,
             'field_headers': self.field_headers,
             'field_names': self.field_list,
-            'link_adcionar': 'atividades:adcionar_atividade',
+            'link_adcionar': '#',
         }

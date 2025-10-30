@@ -1,6 +1,9 @@
 from django.db import models, transaction
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.contrib.contenttypes.models import ContentType
 
 class Fornecedor(models.Model):
     razao_social = models.CharField(max_length=200, unique=True)
@@ -27,15 +30,11 @@ class Item(models.Model):
 
     @property
     def tipo_especifico(self):
-        """
-        Determina o prefixo do SKU com base no tipo real do objeto.
-        Esta é a versão corrigida usando isinstance().
-        """
-        if isinstance(self, MateriaPrima):
-            return 'MP'
-        if isinstance(self, ProdutoFabricado):
-            return 'PF'
-        return 'GEN'
+        tipo = ContentType.objects.get_for_model(self).model
+        return {
+            'materiaprima': 'MP',
+            'produtofabricado': 'PF'
+        }.get(tipo, 'GEN')
 
     def save(self, *args, **kwargs):
         """
@@ -253,7 +252,150 @@ class Transportadora(models.Model):
         return f"{self.razao_social}"
 
 class OrdemProducao(models.Model):
-    pass
+    """
+    A Ordem de Produção (OP) é o documento principal para
+    iniciar o processo de fabricação.
+    """
+
+    # --- Choices para o Status da OP ---
+    # Usar TextChoices facilita a leitura do código
+    class StatusOP(models.TextChoices):
+        PLANEJADA = 'PLANEJADA', 'Planejada'
+        LIBERADA = 'LIBERADA', 'Liberada para Produção'
+        EM_PRODUCAO = 'EM_PRODUCAO', 'Em Produção'
+        CONTROLE_QUALIDADE = 'QUALIDADE', 'Controle de Qualidade'
+        CONCLUIDA = 'CONCLUIDA', 'Concluída'
+        CANCELADA = 'CANCELADA', 'Cancelada'
+
+    # --- 1. O Quê e Quanto ---
+    produto = models.ForeignKey(
+        ProdutoFabricado, 
+        on_delete=models.PROTECT, # Proíbe deletar um Produto que tenha OPs
+        related_name='ordens_producao',
+        help_text="O produto final que será fabricado"
+    )
+    quantidade_planejada = models.PositiveIntegerField(
+        help_text="Quantidade que deve ser produzida"
+    )
+
+    # --- 2. Status e Rastreamento ---
+    codigo_op = models.CharField(
+        max_length=20, 
+        unique=True, 
+        blank=True, # Será preenchido automaticamente
+        help_text="Código único da Ordem (ex: OP-00123)"
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=StatusOP.choices,
+        default=StatusOP.PLANEJADA,
+        db_index=True # Bom para performance em filtros por status
+    )
+
+    # --- 3. Datas ---
+    data_emissao = models.DateTimeField(
+        default=timezone.now,
+        help_text="Data em que a OP foi criada no sistema"
+    )
+    data_prevista_conclusao = models.DateField(
+        help_text="Data limite para a conclusão da produção"
+    )
+    data_inicio_real = models.DateTimeField(
+        null=True, blank=True,
+        help_text="Data e hora que a produção realmente começou"
+    )
+    data_conclusao_real = models.DateTimeField(
+        null=True, blank=True,
+        help_text="Data e hora que a produção foi finalizada"
+    )
+
+    # --- 4. Contexto e Responsáveis (Links para seus outros apps) ---
+    solicitante = models.ForeignKey(
+        User, # Usa o User padrão ou seu modelo 'Solicitante'
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='ops_solicitadas'
+    )
+    
+    # Se 'Projeto' foi importado com sucesso, adiciona o campo
+    if Projeto:
+        projeto = models.ForeignKey(
+            Projeto, 
+            on_delete=models.SET_NULL,
+            null=True, 
+            blank=True,
+            related_name='ordens_producao',
+            help_text="Projeto ao qual esta OP está vinculada"
+        )
+    
+    # --- 5. Resultados e Observações ---
+    quantidade_produzida = models.PositiveIntegerField(
+        default=0,
+        help_text="Quantidade real que foi produzida com sucesso"
+    )
+    observacoes = models.TextField(blank=True, null=True)
+
+    # --- Configurações do Modelo ---
+    class Meta:
+        ordering = ['-data_emissao'] # Mostrar as mais novas primeiro
+        verbose_name = "Ordem de Produção"
+        verbose_name_plural = "Ordens de Produção"
+
+    def __str__(self):
+        # Ex: "OP-00101 (PLANEJADA) - Produto X"
+        return f"{self.codigo_op} ({self.get_status_display()}) - {self.produto.codigo}"
+
+    def save(self, *args, **kwargs):
+        # Lógica para criar um código de OP automático antes de salvar
+        if not self.id and not self.codigo_op:
+            # Salva primeiro para obter um ID
+            super().save(*args, **kwargs) 
+            # Cria o código_op baseado no ID
+            self.codigo_op = f'OP-{self.id:05d}'
+            # Salva novamente com o código (não chama save() recursivo)
+            kwargs['force_insert'] = False 
+            super().save(update_fields=['codigo_op'], *args, **kwargs)
+        else:
+            super().save(*args, **kwargs)
+
+    # --- Métodos de Lógica de Negócio (Exemplos) ---
+    
+    def liberar_producao(self):
+        """Muda o status para LIBERADA e dispara a baixa de estoque (BOM)."""
+        if self.status == self.StatusOP.PLANEJADA:
+            self.status = self.StatusOP.LIBERADA
+            self.save()
+            #
+            # !! AQUI É O GATILHO !!
+            # Aqui você chamaria a lógica para verificar a Lista de Materiais (BOM)
+            # do self.produto e dar a baixa no estoque dos componentes.
+            # (ex: self.produto.bom.reservar_estoque(self.quantidade_planejada))
+            #
+            print(f"OP {self.codigo_op} liberada. Disparar baixa de estoque.")
+
+    def iniciar_producao(self):
+        """Marca a data de início real."""
+        if self.status == self.StatusOP.LIBERADA:
+            self.status = self.StatusOP.EM_PRODUCAO
+            self.data_inicio_real = timezone.now()
+            self.save()
+            print(f"OP {self.codigo_op} iniciada.")
+
+    def concluir_producao(self, quantidade_boa):
+        """Finaliza a OP e dispara a entrada do produto acabado no estoque."""
+        if self.status == self.StatusOP.EM_PRODUCAO or self.status == self.StatusOP.CONTROLE_QUALIDADE:
+            self.status = self.StatusOP.CONCLUIDA
+            self.data_conclusao_real = timezone.now()
+            self.quantidade_produzida = quantidade_boa
+            self.save()
+            #
+            # !! AQUI É O GATILHO !!
+            # Aqui você chamaria a lógica para dar entrada do 
+            # self.produto no estoque (quantidade_boa).
+            # (ex: self.produto.dar_entrada_estoque(quantidade_boa))
+            #
+            print(f"OP {self.codigo_op} concluída. Entrada de {quantidade_boa} no estoque.")
 
 class OrdemCompra(models.Model):
     pass
@@ -310,3 +452,10 @@ class DefeitoEquipamento(models.Model):
     
     class Meta:
         ordering = ['equipamento']
+
+@receiver(post_save, sender=EstruturaProduto)
+def atualizar_preco_produto(sender, instance, **kwargs):
+    produto = instance.produto_pai
+    estrutura = EstruturaProduto.objects.filter(produto_pai=produto)
+    produto.preco_final = sum(c.componente_filho.preco_custo_compra * c.quantidade for c in estrutura )
+    produto.save()

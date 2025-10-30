@@ -1,6 +1,10 @@
 from django.contrib import admin
-from .models import Transporte ,Fornecedor, Item, MateriaPrima, ProdutoFabricado, EstruturaProduto, Projeto, Demanda, Atividade, OrdemServico, Equipamento, Endereco, Empresa, Transportadora, DefeitoComponente
+from .models import OrdemProducao, Transporte ,Fornecedor, Item, MateriaPrima, ProdutoFabricado, EstruturaProduto, Projeto, Demanda, Atividade, OrdemServico, Equipamento, Endereco, Empresa, Transportadora, DefeitoComponente
 
+@admin.register(OrdemProducao)
+class OrdemProducaoAdmin(admin.ModelAdmin):
+    list_per_page = 20
+    
 @admin.register(Transportadora)
 class TransportadoraoAdmin(admin.ModelAdmin):
     list_display = ('razao_social', 'nome_contato', 'telefone', 'observacoes')

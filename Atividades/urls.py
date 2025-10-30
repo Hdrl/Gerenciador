@@ -1,10 +1,20 @@
-from django.urls import path
-from . import views
+from django.urls import path, include
+from Atividades import views
+from rest_framework.routers import DefaultRouter
+
+router = DefaultRouter()
+router.register(r'ordemservico', views.OrdemServicoViewSet)
+router.register(r'ordemproducao', views.OrdemProducaoViewSet)
+router.register(r'produtos', views.ProdutoFabricadoViewSet)
+router.register(r'locais', views.EnderecoViewSet)
+router.register(r'usuarios', views.UserViewSet)
+router.register(r'projetos', views.ProjetoViewSet)
 
 app_name = 'atividades'
 
 urlpatterns = [
     path('', views.index, name='index'),
+    path('api/', include(router.urls)),
     path('login/', views.login_view, name='login'),
     path('logout/', views.CustomLogoutView.as_view(), name='logout'),
     path('ordemservico/', views.ordem_servico, name='lista_os'),

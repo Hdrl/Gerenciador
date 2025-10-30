@@ -26,13 +26,14 @@ SECRET_KEY = 'c+r&g38ti)zxk74m(hbhd-ft@sjy%!6b)qzq7kp!f79osf22w@'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 LOGIN_URL = 'atividades:login'
 
 # Application definition
 
 INSTALLED_APPS = [
+    'rest_framework',
     'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -43,9 +44,11 @@ INSTALLED_APPS = [
     'Atividades',
     'crispy_forms',
     'crispy_bootstrap5',
+    'corsheaders'
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -143,3 +146,7 @@ JAZZMIN_UI_TWEAKS = {
 
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173', 
+]
