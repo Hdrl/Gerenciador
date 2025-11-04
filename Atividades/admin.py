@@ -1,9 +1,154 @@
 from django.contrib import admin
 from .models import OrdemProducao, Transporte ,Fornecedor, Item, MateriaPrima, ProdutoFabricado, EstruturaProduto, Projeto, Demanda, Atividade, OrdemServico, Equipamento, Endereco, Empresa, Transportadora, DefeitoComponente
 
+from django.contrib import admin, messages
+from django.utils import timezone
+from .models import OrdemProducao 
+# Importe também seus outros modelos se precisar deles para Inlines
+# ex: from produtos.models import ProdutoFabricado
+
 @admin.register(OrdemProducao)
 class OrdemProducaoAdmin(admin.ModelAdmin):
-    list_per_page = 20
+    """
+    Configuração personalizada do Admin para Ordens de Produção.
+    """
+
+    # --- AÇÕES CUSTOMIZADAS (O mais importante!) ---
+    # Permite que você execute a lógica de negócio da sua OP
+    # diretamente da lista do admin.
+    
+    @admin.action(description='1. Liberar OPs selecionadas para produção')
+    def marcar_como_liberada(self, request, queryset):
+        """
+        Executa a ação de 'liberar_producao' do modelo.
+        """
+        count = 0
+        total = queryset.count()
+        
+        # Filtra apenas as que podem ser liberadas
+        ops_para_liberar = queryset.filter(status=OrdemProducao.StatusOP.PLANEJADA)
+        
+        for op in ops_para_liberar:
+            op.liberar_producao()  # Chama o método do seu modelo
+            count += 1
+            
+        if count > 0:
+            self.message_user(request, f"{count} de {total} OPs foram liberadas.", messages.SUCCESS)
+        if count < total:
+            self.message_user(request, f"{total - count} OPs já estavam em outro status e não foram liberadas.", messages.WARNING)
+
+    @admin.action(description='2. Marcar OPs selecionadas como "Em Produção"')
+    def marcar_como_iniciada(self, request, queryset):
+        """
+        Inicia a produção das OPs que estão 'LIBERADA'.
+        """
+        updated_count = queryset.filter(status=OrdemProducao.StatusOP.LIBERADA).update(
+            status=OrdemProducao.StatusOP.EM_PRODUCAO,
+            data_inicio_real=timezone.now()
+        )
+        self.message_user(request, f"{updated_count} OPs foram marcadas como 'Em Produção'.", messages.SUCCESS)
+
+    @admin.action(description='3. Concluir OPs selecionadas (Qtd. Produzida = Qtd. Planejada)')
+    def marcar_como_concluida(self, request, queryset):
+        """
+        Ação de conclusão rápida. Assume que a Qtd. Produzida é igual à Planejada.
+        """
+        updated_count = 0
+        valid_statuses = [
+            OrdemProducao.StatusOP.EM_PRODUCAO, 
+            OrdemProducao.StatusOP.CONTROLE_QUALIDADE
+        ]
+        
+        ops_para_concluir = queryset.filter(status__in=valid_statuses)
+
+        for op in ops_para_concluir:
+            op.status = OrdemProducao.StatusOP.CONCLUIDA
+            op.data_conclusao_real = timezone.now()
+            op.quantidade_produzida = op.quantidade_planejada  # Suposição da ação
+            op.save()
+            updated_count += 1
+            
+        self.message_user(request, f"{updated_count} OPs foram concluídas com sucesso.", messages.SUCCESS)
+
+    # --- Configuração da Lista de Exibição ---
+    list_display = (
+        'codigo_op',
+        'status',
+        'produto',
+        'quantidade_planejada',
+        'data_prevista_conclusao',
+        'data_emissao',
+        'solicitante',
+    )
+    
+    # --- Filtros (essencial para PCP) ---
+    list_filter = (
+        'status',
+        'data_prevista_conclusao',
+        'data_emissao',
+        'produto',
+        'solicitante',
+        'projeto',
+    )
+    
+    # --- Barra de Pesquisa ---
+    search_fields = (
+        'codigo_op',
+        'produto__codigo',  # Assumindo que seu modelo Produto tem um campo 'codigo'
+        'produto__descricao', # Assumindo que seu modelo Produto tem 'descricao'
+        'solicitante__username',
+        'projeto__nome', # Assumindo que seu modelo Projeto tem 'nome'
+    )
+    
+    # --- Campos que não podem ser editados manualmente ---
+    # O código OP e datas de log são controlados pelo sistema
+    readonly_fields = (
+        'codigo_op',
+        'data_emissao',
+        'data_inicio_real',
+        'data_conclusao_real',
+        'quantidade_produzida', # Deve ser atualizado por uma ação ou na conclusão
+    )
+
+    # --- Organização do Formulário de Edição ---
+    # Divide o formulário em seções lógicas
+    fieldsets = (
+        ('Informações Principais', {
+            'fields': (
+                'codigo_op',
+                'status',
+                'produto',
+                'quantidade_planejada',
+            )
+        }),
+        ('Datas', {
+            'fields': (
+                'data_emissao',
+                'data_prevista_conclusao',
+                'data_inicio_real',
+                'data_conclusao_real',
+            )
+        }),
+        ('Contexto e Responsáveis', {
+            'fields': (
+                'solicitante',
+                'projeto',
+            )
+        }),
+        ('Resultados e Observações', {
+            'fields': (
+                'quantidade_produzida',
+                'observacoes',
+            )
+        }),
+    )
+
+    # --- Adiciona as Ações ao Admin ---
+    actions = [
+        'marcar_como_liberada',
+        'marcar_como_iniciada',
+        'marcar_como_concluida',
+    ]
     
 @admin.register(Transportadora)
 class TransportadoraoAdmin(admin.ModelAdmin):

@@ -1,0 +1,42 @@
+:root{
+  --nav-link-hover-color: var(--bs-gray-dark); 
+}
+
+.sidebar-nav .nav-link {
+  color: rgb(255, 255, 255); 
+}
+.sidebar-nav .nav-link:hover{
+  background-color: var(--nav-link-hover-color);
+  color: white;
+}
+#sidebar {
+  width: 280px; /* Largura padrão */
+  height: 100vh; /* Altura total da tela */
+  position: sticky; /* Fixa no lugar ao rolar */
+  top: 0;
+}
+
+/* Esconde o texto quando a sidebar está "colapsada" (opcional) */
+/* Você precisaria de um estado em React para adicionar a classe 'collapsed' */
+#sidebar.collapsed .sidebar-text {
+  display: none;
+}
+
+/* Animação da seta do submenu */
+.transition-chevron {
+  transition: transform 0.2s ease-in-out;
+}
+.rotate-180 {
+  transform: rotate(180deg);
+}
+
+/* Remove o fundo e a borda do botão de Dropdown do usuário */
+#dropdownUser1 {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  text-align: left;
+}
+#dropdownUser1::after {
+  margin-left: auto; /* Alinha a seta do dropdown à direita */
+}

@@ -1,9 +1,15 @@
 from rest_framework import serializers
-from Atividades.models import User, Endereco, Projeto, ProdutoFabricado, OrdemServico, OrdemProducao
+from Atividades.models import User, Endereco, Projeto, ProdutoFabricado, OrdemServico, OrdemProducao, MateriaPrima
 
 class OrdemServicoSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrdemServico
+        fields = '__all__'
+
+
+class MateriaPrimaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MateriaPrima
         fields = '__all__'
 
 class OrdemProducaoSerializer(serializers.ModelSerializer):

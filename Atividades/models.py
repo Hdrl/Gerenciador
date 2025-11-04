@@ -81,6 +81,7 @@ class ProdutoFabricado(Item):
         max_digits=10, 
         decimal_places=2, 
         default=0.00,
+        editable=False,
         help_text="Custo calculado com base na estrutura de produto (BOM)."
     )
     tempo_de_fabricacao_h = models.FloatField(
@@ -298,7 +299,9 @@ class OrdemProducao(models.Model):
         help_text="Data em que a OP foi criada no sistema"
     )
     data_prevista_conclusao = models.DateField(
-        help_text="Data limite para a conclusão da produção"
+        help_text="Data limite para a conclusão da produção",
+        blank=True,
+        null=True
     )
     data_inicio_real = models.DateTimeField(
         null=True, blank=True,
@@ -336,7 +339,7 @@ class OrdemProducao(models.Model):
     )
     observacoes = models.TextField(blank=True, null=True)
 
-    # --- Configurações do Modelo ---
+    # --- Configurações do Modelo 
     class Meta:
         ordering = ['-data_emissao'] # Mostrar as mais novas primeiro
         verbose_name = "Ordem de Produção"
@@ -344,7 +347,7 @@ class OrdemProducao(models.Model):
 
     def __str__(self):
         # Ex: "OP-00101 (PLANEJADA) - Produto X"
-        return f"{self.codigo_op} ({self.get_status_display()}) - {self.produto.codigo}"
+        return f"{self.codigo_op} ({self.get_status_display()}) - {self.produto}"
 
     def save(self, *args, **kwargs):
         # Lógica para criar um código de OP automático antes de salvar

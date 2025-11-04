@@ -3,9 +3,10 @@ from Atividades import views
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
+router.register(r'produtos', views.ProdutoFabricadoViewSet)
+router.register(r'materiasprimas', views.MateriaPrimaViewSet)
 router.register(r'ordemservico', views.OrdemServicoViewSet)
 router.register(r'ordemproducao', views.OrdemProducaoViewSet)
-router.register(r'produtos', views.ProdutoFabricadoViewSet)
 router.register(r'locais', views.EnderecoViewSet)
 router.register(r'usuarios', views.UserViewSet)
 router.register(r'projetos', views.ProjetoViewSet)

@@ -12,12 +12,16 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from Atividades.services import processar_lista_seriais
-from Atividades.managers import ModelManager
-from Atividades.serializers import Endereco, User, OrdemServicoSerializer, OrdemProducaoSerializer, ProjetoSerializer, ProdutoFabricadoSerializer, EnderecoSerializer, UserSerializer
-from rest_framework import viewsets  # type: ignore
+from Atividades.serializers import MateriaPrimaSerializer, OrdemServicoSerializer, OrdemProducaoSerializer, ProjetoSerializer, ProdutoFabricadoSerializer, EnderecoSerializer, UserSerializer
+from Atividades.models import MateriaPrima, Endereco, User
+from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
+
+class MateriaPrimaViewSet(viewsets.ModelViewSet):
+    queryset = MateriaPrima.objects.all()
+    serializer_class = MateriaPrimaSerializer
 
 class ProdutoFabricadoViewSet(viewsets.ModelViewSet):
     queryset = ProdutoFabricado.objects.all()
@@ -116,8 +120,21 @@ def index(request):
 
 @login_required
 def ordem_servico(request):
-    ordem_servico = ModelManager(OrdemServico)
-    return render(request, 'Atividades/ordem_servico.html', ordem_servico.listar())
+    field_headers = []
+    for field in OrdemServico._meta.get_fields():
+        try:
+            field_headers.append(OrdemServico._meta.get_field(field))
+        except Exception:
+            continue
+
+    context = {
+        'querys': OrdemServico.objects.all(),
+        'verbose_name': OrdemServico._meta.verbose_name,
+        'verbose_name_plural': OrdemServico._meta.verbose_name_plural,
+        'field_headers': field_headers,
+        'link_adcionar':'atividades:index',
+    }
+    return render(request, 'Atividades/listar_modelo.html', context)
 
 @login_required
 def cadastro_projeto(request):

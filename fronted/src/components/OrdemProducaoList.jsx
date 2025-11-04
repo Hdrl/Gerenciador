@@ -1,19 +1,15 @@
 import React from 'react';
-import apiClient from '../api/axiosConfig';
+import apiClient from '../api/apiClient';
 
-// 'ordens' e 'onAtualizarLista' são passados pelo App.jsx
-function OrdemProducaoList({ ordens, onAtualizarLista }) {
+// Recebe as novas funções 'onEditarClick' e 'onRemoverClick' do App.jsx
+function OrdemProducaoList({ ordens, onAtualizarLista, onEditarClick, onRemoverClick }) {
 
-    // Função para "Liberar" a OP (Update/PATCH)
-    // No Django, isso deve chamar o método "liberar_producao"
-    // Vamos supor que você criou uma "action" no ViewSet
+    // Funções de status (Liberar, Concluir) permanecem as mesmas
     const handleLiberar = (id) => {
-        // A melhor forma de fazer isso é com uma "action" no ViewSet
-        // Ex: /api/ordens/{id}/liberar_producao/
         apiClient.post(`/ordemservico/${id}/liberar_producao/`)
             .then(response => {
                 alert(`OP ${response.data.codigo_op} liberada!`);
-                onAtualizarLista(); // Recarrega a lista
+                onAtualizarLista(); 
             })
             .catch(error => {
                 console.error('Erro ao liberar OP:', error);
@@ -21,9 +17,7 @@ function OrdemProducaoList({ ordens, onAtualizarLista }) {
             });
     };
     
-    // Função para "Concluir" a OP (Update/PATCH)
     const handleConcluir = (id) => {
-        // Simulando a conclusão com uma quantidade
         const qtd = prompt("Qual a quantidade produzida?");
         if (!qtd || isNaN(qtd) || parseInt(qtd) <= 0) {
             alert("Quantidade inválida.");
@@ -33,7 +27,7 @@ function OrdemProducaoList({ ordens, onAtualizarLista }) {
         apiClient.post(`/ordemservico/${id}/concluir_producao/`, { quantidade_boa: parseInt(qtd) })
             .then(response => {
                 alert(`OP ${response.data.codigo_op} concluída!`);
-                onAtualizarLista(); // Recarrega a lista
+                onAtualizarLista();
             })
             .catch(error => {
                 console.error('Erro ao concluir OP:', error);
@@ -56,9 +50,11 @@ function OrdemProducaoList({ ordens, onAtualizarLista }) {
                         <th>Status</th>
                         <th>Produto (ID)</th>
                         <th>Qtd. Planej.</th>
-                        <th>Data Emissão</th>
                         <th>Data Prevista</th>
-                        <th>Ações</th>
+                        {/* NOVA COLUNA DE AÇÕES (EDITAR/REMOVER) */}
+                        <th>Ações CRUD</th>
+                        {/* Coluna para ações de status */}
+                        <th>Ações de Status</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -66,12 +62,28 @@ function OrdemProducaoList({ ordens, onAtualizarLista }) {
                         <tr key={op.id}>
                             <td>{op.codigo_op}</td>
                             <td>{op.status}</td>
-                            <td>{op.produto}</td> {/* Idealmente seria op.produto.codigo */}
+                            <td>{op.produto}</td>
                             <td>{op.quantidade_planejada}</td>
-                            <td>{new Date(op.data_emissao).toLocaleDateString()}</td>
                             <td>{new Date(op.data_prevista_conclusao).toLocaleDateString()}</td>
-                            <td className="acoes">
-                                {/* Mostra o botão certo dependendo do status */}
+                            
+                            {/* NOVOS BOTÕES DE EDITAR E REMOVER */}
+                            <td className="acoes-crud">
+                                <button 
+                                    className="btn-editar"
+                                    onClick={() => onEditarClick(op)}
+                                >
+                                    Editar
+                                </button>
+                                <button 
+                                    className="btn-remover"
+                                    onClick={() => onRemoverClick(op.id)}
+                                >
+                                    Remover
+                                </button>
+                            </td>
+
+                            {/* Botões de Ação de Status (Liberar, Concluir) */}
+                            <td className="acoes-status">
                                 {op.status === 'PLANEJADA' && (
                                     <button 
                                         className="btn-liberar" 
@@ -88,7 +100,6 @@ function OrdemProducaoList({ ordens, onAtualizarLista }) {
                                         Concluir
                                     </button>
                                 )}
-                                {/* Você pode adicionar outros botões (Iniciar, Cancelar, etc.) */}
                             </td>
                         </tr>
                     ))}
