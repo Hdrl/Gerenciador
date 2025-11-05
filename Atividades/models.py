@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ObjectDoesNotExist
 
 class Fornecedor(models.Model):
     razao_social = models.CharField(max_length=200, unique=True)
@@ -175,17 +176,17 @@ class Atividade(models.Model):
         ('E', 'EMBALAGEM'),
         ('MA', 'MANUTENÇÃO'),
     ]
-    situacao_choices = [
-        ('P', 'PENDENTE'),
-        ('C', 'FINALIZADA'),
-    ]
+    class Status(models.TextChoices):
+        PENDENTE = 'PENDENTE', 'Pendente'
+        EM_ANDAMENTO = 'EM_ANDAMENTO', 'Em Andamento'
+        FINALIZADO = 'FINALIZADO', 'Finalizado'
 
-    dataInicial = models.DateTimeField()
-    dataFinal = models.DateTimeField(null=True, blank=True)
+    data_inicial = models.DateTimeField(editable=False, default=timezone.now)
+    data_final = models.DateTimeField(null=True, blank=True, editable=False)
     responsavel = models.ForeignKey(User, on_delete=models.CASCADE)
     projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE)
-    tipoAtividade = models.CharField(choices=atividade_choices, max_length=2)
-    situacao = models.CharField(choices=situacao_choices, max_length=1, default='P')
+    tipo_atividade = models.CharField(choices=atividade_choices, max_length=2)
+    status = models.CharField(choices=Status.choices, max_length=20, default=Status.PENDENTE)
     observacoes = models.TextField(blank=True)
     excluido = models.BooleanField(default=False)
 
@@ -196,7 +197,20 @@ class Atividade(models.Model):
     )
 
     def __str__(self):
-        return f"{self.get_tipoAtividade_display()} - {self.projeto.nome}"
+        return f"{self.get_tipo_atividade_display()} - {self.projeto.nome}"
+
+    def save(self, *args, **kwargs):
+        if self.pk is not None:
+            try:
+                original =  self.__class__.objects.get(pk=self.pk)
+                if (original.status == self.Status.PENDENTE and  self.status == self.Status.FINALIZADO and self.data_final is None):
+                    self.data_final = timezone.now()
+            except ObjectDoesNotExist:
+                pass
+        else:
+            if self.status == self.Status.FINALIZADO and self.data_final is None:
+                self.data_final = timezone.now()
+        super().save(*args, **kwargs)
 
 class DefeitoComponente(models.Model):
     componente = models.ForeignKey(Item, on_delete=models.PROTECT, related_name='registro_defeitos')

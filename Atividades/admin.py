@@ -184,9 +184,9 @@ class EmpresaAdmin(admin.ModelAdmin):
 
 @admin.register(Atividade)
 class AtividadeAdmin(admin.ModelAdmin):
-    list_display = ('tipoAtividade', 'dataInicial', 'dataFinal', 'responsavel', 'projeto', 'situacao')
+    list_display = ('tipo_atividade', 'data_inicial', 'data_final', 'responsavel', 'projeto', 'status')
     search_fields = ('responsavel__username', 'projeto__nome')
-    list_filter = ('tipoAtividade', 'situacao', 'dataInicial', 'dataFinal')
+    list_filter = ('tipo_atividade', 'status', 'data_inicial', 'data_final')
     list_per_page = 20
 
 @admin.register(Equipamento)

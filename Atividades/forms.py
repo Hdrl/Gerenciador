@@ -41,8 +41,8 @@ class AtividadeForm(forms.ModelForm):
         self.helper.layout = Layout(
             # Linha 1 (Como antes)
             Row(
-                Column('dataInicial', css_class='col-md-4'),
-                Column('tipoAtividade', css_class='col-md-4'),
+                Column('data_inicial', css_class='col-md-4'),
+                Column('tipo_atividade', css_class='col-md-4'),
                 Column('projeto', css_class='col-md-4'),
                 css_class='mb-3'
             ),
@@ -59,13 +59,13 @@ class AtividadeForm(forms.ModelForm):
         if not self.instance.pk:
             if user:
                 self.fields['responsavel'].initial = user
-                self.fields['dataInicial'].initial = timezone.now()
+                self.fields['data_inicial'].initial = timezone.now()
             
             self.fields['responsavel'].disabled = True
-            self.fields['dataInicial'].disabled = True
+            self.fields['data_inicial'].disabled = True
         else:
             self.fields['responsavel'].disabled = True
-            self.fields['dataInicial'].disabled = True
+            self.fields['data_inicial'].disabled = True
 
         self.produto = ProdutoFabricado.objects.values_list('id', 'descricao')
 
@@ -74,8 +74,8 @@ class AtividadeForm(forms.ModelForm):
         
         # 1. ADICIONE 'equipamentos' À LISTA DE CAMPOS
         fields = [
-            'dataInicial', 'dataFinal', 'responsavel', 'projeto', 
-            'tipoAtividade'
+          'responsavel', 'projeto', 
+            'tipo_atividade'
         ]
         
         widgets = {
