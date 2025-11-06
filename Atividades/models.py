@@ -414,6 +414,86 @@ class OrdemProducao(models.Model):
             #
             print(f"OP {self.codigo_op} concluída. Entrada de {quantidade_boa} no estoque.")
 
+class OrdemProducao(models.Model):
+    pass
+    STATUS_CHOICES = [
+        ('PLA', 'Planejada'),
+        ('LIB', 'Liberada para Produção'),
+        ('EXE', 'Em Execução'),
+        ('CON', 'Concluída'),
+        ('CAN', 'Cancelada'),
+    ]
+    produto = models.ForeignKey(
+        ProdutoFabricado, 
+        on_delete=models.PROTECT,
+        help_text="O item que será produzido."
+    )
+    quantidade_planejada = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2,
+        default=1.00,
+        help_text="Quantidade que se planeja produzir."
+    )
+    quantidade_produzida = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2,
+        default=0,
+        help_text="Quantidade realmente finalizada."
+    )
+    projeto = models.ForeignKey(
+        Projeto, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='ordens_producao',
+        help_text="Projeto ao qual esta produção está vinculada."
+    )
+    demanda_origem = models.ForeignKey(
+        Demanda,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='ordens_geradas',
+        help_text="Demanda de cliente/projeto que originou esta OP."
+    )
+    status = models.CharField(max_length=3, choices=STATUS_CHOICES, default='PLA')
+    data_criacao = models.DateTimeField(default=timezone.now, editable=False)
+    tempo_execucao_preivista = models.DateField(verbose_name="Término Previsto", null=True, blank=True)
+    data_real_termino = models.DateTimeField(
+        null=True, 
+        blank=True,
+        verbose_name="Data de Conclusão Real"
+    )
+    custo_estimado = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2, 
+        null=True, 
+        blank=True,
+        help_text="Custo calculado no momento do planejamento (Qtd * Custo do BOM)"
+    )
+    custo_real = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2, 
+        null=True, 
+        blank=True,
+        help_text="Custo real apurado após o consumo de materiais."
+    )
+    observacoes = models.TextField(blank=True, null=True)
+    def __str__(self):
+        return f"OP-{self.id} | {self.quantidade_planejada} x {self.produto.codigo_item}"
+
+    def save(self, *args, **kwargs):
+        if self.pk is None and self.produto:
+            if self.produto.custo_producao_calculado:
+                self.custo_estimado = self.quantidade_planejada * self.produto.custo_producao_calculado
+        
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = "Ordem de Produção"
+        verbose_name_plural = "Ordens de Produção"
+        ordering = ['-data_criacao', 'status']
+
 class OrdemCompra(models.Model):
     pass
 
