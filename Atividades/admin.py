@@ -1,11 +1,12 @@
 from django.contrib import admin
-from .models import ItemInstalacao, OrdemProducao, Transporte ,Fornecedor, Item, MateriaPrima, ProdutoFabricado, EstruturaProduto, Projeto, Demanda, Atividade, OrdemServico, Equipamento, Endereco, Empresa, Transportadora, DefeitoComponente
+from .models import  AgrupamentoVolume, ItemInstalacao, OrdemProducao, Transporte ,Fornecedor, Item, MateriaPrima, ProdutoFabricado, EstruturaProduto, Projeto, Demanda, Atividade, OrdemServico, Equipamento, Endereco, Empresa, Transportadora, DefeitoComponente
 from django.contrib import admin, messages
 from django.utils import timezone
 from .models import OrdemProducao
 from decimal import Decimal
 from django.contrib import admin, messages
 from django.http import HttpResponse
+from django.template import Context, Template
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm 
@@ -38,6 +39,25 @@ class DemandaInline(admin.TabularInline):
     extra = 1
     verbose_name = "Demanda do Projeto"
     verbose_name_plural = "Demandas do Projeto"
+    raw_id_fields = ('produto',)
+
+class AgrupamentoVolumeInline(admin.TabularInline):
+    """
+    Permite adicionar/ver os LOTES de volumes.
+    """
+    model = AgrupamentoVolume
+    fk_name = 'projeto'
+    # Campos que o usuário vai preencher
+    fields = (
+        'produto', 
+        'quantidade_por_volume', 
+        'numero_de_volumes', 
+        'codigo_lote', 
+        'data_embalado'
+    )
+    readonly_fields = ('codigo_lote', 'data_embalado')
+    extra = 1
+    verbose_name_plural = "Lotes de Volumes Embalados"
     raw_id_fields = ('produto',)
 
 @admin.register(OrdemProducao)
@@ -426,7 +446,7 @@ class DemandaAdmin(admin.ModelAdmin):
 
 @admin.register(Projeto)
 class ProjetoAdmin(admin.ModelAdmin):
-    inlines = [DemandaInline]
+    inlines = [DemandaInline, AgrupamentoVolumeInline]
     list_display = ('nome', 'status', 'data_inicio', 'data_fim')
     search_fields = ('nome',)
     list_filter = ('status',)
@@ -547,8 +567,117 @@ class ProjetoAdmin(admin.ModelAdmin):
                               "Nenhuma nova OP precisou ser criada (todas as demandas já tinham OPs).", 
                               messages.WARNING)
 
-    # --- Registre as duas actions ---
+    @admin.action(description='🏷️ Gerar Etiquetas de Lote (HTML) para o projeto')
+    def gerar_etiquetas_volume(self, request, queryset):
+        if queryset.count() != 1:
+            self.message_user(request, "Selecione apenas UM projeto.", messages.ERROR)
+            return
+
+        projeto = queryset.first()
+        # Busca todos os LOTES ligados a este projeto
+        lotes = projeto.agrupamentos_volume.all().order_by('codigo_lote')
+
+        if not lotes.exists():
+            self.message_user(request, "Este projeto não possui lotes de volumes cadastrados.", messages.WARNING)
+            return
+            
+        # --- LÓGICA DO LOOP ---
+        # Vamos criar uma lista simples de "etiquetas" para o template
+        lista_de_etiquetas_individuais = []
+        for lote in lotes:
+            # (Ex: lote para "PF-0020", 9 volumes de 16 uni)
+            total_volumes_no_lote = lote.numero_de_volumes
+            
+            # Loop de 1 até 9
+            for i in range(1, total_volumes_no_lote + 1):
+                etiqueta_data = {
+                    "cliente": projeto.nome,
+                    "material": lote.produto.descricao,
+                    "quantidade": lote.quantidade_por_volume,
+                    "codigo_lote": lote.codigo_lote, # Rastreio do Lote
+                    "contador_volume": f"Volume: {i} / {total_volumes_no_lote}" # Rastreio da Caixa
+                }
+                lista_de_etiquetas_individuais.append(etiqueta_data)
+
+        # Seu template HTML, agora modificado para o loop
+        html_template_string = """
+        <!DOCTYPE html>
+        <html lang="pt-br">
+        <head>
+            <meta charset="UTF-8">
+            <title>Impressão de Etiquetas - {{ projeto.nome }}</title>
+            <style>
+                /* Cole seus estilos completos de etiqueta.html aqui */
+                .etiqueta {
+                    border: 1px dashed grey; box-sizing: border-box;
+                    padding: 10px; overflow: hidden; display: flex;
+                    flex-direction: column; justify-content: space-between;
+                }
+                .etiqueta .header { text-align: center; font-weight: bold; font-size: 0.9em;
+                                    border-bottom: 1px solid black; padding-bottom: 5px; margin-bottom: 8px; }
+                .etiqueta main { border: 1px solid grey; padding: 8px; margin-bottom: 8px; }
+                .etiqueta .item { margin-bottom: 5px; font-size: 0.85em; }
+                .etiqueta .item-label { font-weight: bold; }
+                .etiqueta .tracking-code { text-align: center; font-weight: bold; font-size: 1.0em;
+                                            margin-top: 5px; padding: 3px; border: 1px solid black; }
+                
+                body { margin: 0; font-family: Arial, sans-serif; background-color: #e0e0e0; }
+                .a4-sheet {
+                    background: white; width: 210mm; height: 297mm; display: flex;
+                    flex-wrap: wrap; align-content: flex-start; margin: 30px auto;
+                    box-shadow: 0 0 10px rgba(0,0,0,0.5); padding: 5mm; box-sizing: border-box;
+                }
+                .a4-sheet .etiqueta { width: 97mm; height: 70mm; margin: 1.5mm; }
+                @media print {
+                    body { background-color: white; }
+                    .a4-sheet { margin: 0; box-shadow: none; }
+                }
+            </style>
+        </head>
+        <body>
+        <div class="a4-sheet">
+            
+            {% for etiqueta in etiquetas %}
+            <div class="etiqueta">
+                <div class="header">
+                    SMART PICKING SOLUÇÕES DIGITAIS LTDA
+                </div>
+                <main>
+                    <div class="item">
+                        <span class="item-label">CLIENTE:</span>
+                        <span class="item-value">{{ etiqueta.cliente }}</span>
+                    </div>
+                    <div class="item">
+                        <span class="item-label">MATERIAL:</span>
+                        <span class="item-value">{{ etiqueta.material }}</span>
+                    </div>
+                    <div class="item">
+                        <span class="item-label">QUANTIDADE:</span>
+                        <span class="item-value">{{ etiqueta.quantidade|floatformat:0 }} PÇS</span>
+                    </div>
+                </main>
+                
+                <div class="tracking-code">
+                    {{ etiqueta.codigo_lote }} | {{ etiqueta.contador_volume }}
+                </div>
+            </div>
+            {% endfor %}
+
+        </div>
+        </body>
+        </html>
+        """
+        
+        # Renderiza o template com os dados
+        template = Template(html_template_string)
+        context = Context({"etiquetas": lista_de_etiquetas_individuais, "projeto": projeto})
+        html_renderizado = template.render(context)
+
+        return HttpResponse(html_renderizado)
+
+    # --- E. Registre as actions ---
     actions = [
         'gerar_romaneio_action', 
-        'gerar_ordens_producao'
+        'gerar_ordens_producao',
+        'gerar_etiquetas_volume', # ❗️❗️ ESTA É A ACTION ATUALIZADA ❗️❗️
     ]

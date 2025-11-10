@@ -548,3 +548,63 @@ class ItemInstalacao(models.Model):
 
     def __str__(self):
         return f"{self.quantidade} x {self.item_acessorio.descricao} (para {self.produto_pai.codigo_item})"
+
+# Em models.py
+# (Não se esqueça das importações: timezone, Projeto, Item, etc.)
+
+class AgrupamentoVolume(models.Model):
+    """
+    Representa um LOTE de volumes/caixas idênticas
+    para um projeto.
+    """
+    projeto = models.ForeignKey(
+        Projeto, 
+        on_delete=models.CASCADE, 
+        related_name="agrupamentos_volume"
+    )
+    produto = models.ForeignKey(
+        Item, # O que está dentro das caixas
+        on_delete=models.PROTECT,
+        help_text="O material que foi embalado."
+    )
+    quantidade_por_volume = models.DecimalField(
+        "Qtd. por Volume",
+        max_digits=10, 
+        decimal_places=2,
+        help_text="Ex: 16 (unidades por caixa)"
+    )
+    numero_de_volumes = models.PositiveIntegerField(
+        "Nº de Volumes",
+        default=1,
+        help_text="Ex: 9 (caixas neste lote)"
+    )
+    data_embalado = models.DateTimeField(
+        "Data",
+        default=timezone.now
+    )
+    # Este será o nosso ID de rastreio para o LOTE
+    codigo_lote = models.CharField(
+        max_length=20, 
+        unique=True, 
+        blank=True,
+        help_text="Código único de rastreio deste lote (ex: LOTE-0001)"
+    )
+
+    class Meta:
+        verbose_name = "Agrupamento de Volume"
+        verbose_name_plural = "Agrupamentos de Volume"
+        ordering = ['projeto', '-data_embalado']
+
+    def __str__(self):
+        return f"{self.codigo_lote} ({self.numero_de_volumes}x {self.quantidade_por_volume} {self.produto.codigo_item})"
+
+    def save(self, *args, **kwargs):
+        # Gera um código de lote automático
+        if not self.id and not self.codigo_lote:
+            super().save(*args, **kwargs) # Salva para obter um ID
+            
+            self.codigo_lote = f'LOTE-{self.id:05d}'
+            kwargs['force_insert'] = False 
+            super().save(update_fields=['codigo_lote'], *args, **kwargs)
+        else:
+            super().save(*args, **kwargs)
