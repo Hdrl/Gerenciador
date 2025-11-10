@@ -5,6 +5,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
+from decimal import Decimal
 
 class Fornecedor(models.Model):
     razao_social = models.CharField(max_length=200, unique=True)
@@ -143,19 +144,31 @@ class Projeto(models.Model):
             return 'bg-warning text-dark'
         else:
             return 'bg-secondary'
+    class Meta:
+        verbose_name = 'Projeto'
+        verbose_name_plural = 'Projetos'
 
     def __str__(self):
         return self.nome
 
 class Demanda(models.Model):
     nome = models.CharField(max_length=200, null=True, blank=True)
-    quantidade = models.IntegerField()
-    produto = models.ForeignKey(Item, on_delete=models.CASCADE)
+    quantidade_total = models.IntegerField("Qtd. Total")
+    quantidade_reserva = models.IntegerField("Qtd. Reserva", default=0, blank=True)
+    produto = models.ForeignKey(ProdutoFabricado, on_delete=models.CASCADE)
     finalizado = models.BooleanField(default=False)
     projeto = models.ForeignKey(Projeto, on_delete=models.CASCADE,  related_name='demandas')
 
+    @property
+    def quantidade_instalacao(self):
+        """
+        Propriedade calculada que nos diz quantos 
+        itens realmente precisam de um kit.
+        """
+        return self.quantidade_total - self.quantidade_reserva
+    
     def __str__(self):
-        value = int(self.quantidade)
+        value = int(self.quantidade_total)
         desc = self.nome if self.nome else self.produto.descricao
         return f"{value} x {desc}"
 
@@ -266,14 +279,12 @@ class Transportadora(models.Model):
     def __str__(self):
         return f"{self.razao_social}"
 
+
 class OrdemProducao(models.Model):
     """
     A Ordem de Produção (OP) é o documento principal para
-    iniciar o processo de fabricação.
+    iniciar o processo de fabricação. (VERSÃO COMBINADA)
     """
-
-    # --- Choices para o Status da OP ---
-    # Usar TextChoices facilita a leitura do código
     class StatusOP(models.TextChoices):
         PLANEJADA = 'PLANEJADA', 'Planejada'
         LIBERADA = 'LIBERADA', 'Liberada para Produção'
@@ -282,32 +293,27 @@ class OrdemProducao(models.Model):
         CONCLUIDA = 'CONCLUIDA', 'Concluída'
         CANCELADA = 'CANCELADA', 'Cancelada'
 
-    # --- 1. O Quê e Quanto ---
     produto = models.ForeignKey(
         ProdutoFabricado, 
-        on_delete=models.PROTECT, # Proíbe deletar um Produto que tenha OPs
+        on_delete=models.PROTECT, 
         related_name='ordens_producao',
         help_text="O produto final que será fabricado"
     )
     quantidade_planejada = models.PositiveIntegerField(
         help_text="Quantidade que deve ser produzida"
     )
-
-    # --- 2. Status e Rastreamento ---
     codigo_op = models.CharField(
         max_length=20, 
         unique=True, 
-        blank=True, # Será preenchido automaticamente
+        blank=True, 
         help_text="Código único da Ordem (ex: OP-00123)"
     )
     status = models.CharField(
         max_length=20,
         choices=StatusOP.choices,
         default=StatusOP.PLANEJADA,
-        db_index=True # Bom para performance em filtros por status
+        db_index=True 
     )
-
-    # --- 3. Datas ---
     data_emissao = models.DateTimeField(
         default=timezone.now,
         help_text="Data em que a OP foi criada no sistema"
@@ -325,128 +331,21 @@ class OrdemProducao(models.Model):
         null=True, blank=True,
         help_text="Data e hora que a produção foi finalizada"
     )
-
-    # --- 4. Contexto e Responsáveis (Links para seus outros apps) ---
     solicitante = models.ForeignKey(
-        User, # Usa o User padrão ou seu modelo 'Solicitante'
+        User,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='ops_solicitadas'
     )
     
-    # Se 'Projeto' foi importado com sucesso, adiciona o campo
-    if Projeto:
-        projeto = models.ForeignKey(
-            Projeto, 
-            on_delete=models.SET_NULL,
-            null=True, 
-            blank=True,
-            related_name='ordens_producao',
-            help_text="Projeto ao qual esta OP está vinculada"
-        )
-    
-    # --- 5. Resultados e Observações ---
-    quantidade_produzida = models.PositiveIntegerField(
-        default=0,
-        help_text="Quantidade real que foi produzida com sucesso"
-    )
-    observacoes = models.TextField(blank=True, null=True)
-
-    # --- Configurações do Modelo 
-    class Meta:
-        ordering = ['-data_emissao'] # Mostrar as mais novas primeiro
-        verbose_name = "Ordem de Produção"
-        verbose_name_plural = "Ordens de Produção"
-
-    def __str__(self):
-        # Ex: "OP-00101 (PLANEJADA) - Produto X"
-        return f"{self.codigo_op} ({self.get_status_display()}) - {self.produto}"
-
-    def save(self, *args, **kwargs):
-        # Lógica para criar um código de OP automático antes de salvar
-        if not self.id and not self.codigo_op:
-            # Salva primeiro para obter um ID
-            super().save(*args, **kwargs) 
-            # Cria o código_op baseado no ID
-            self.codigo_op = f'OP-{self.id:05d}'
-            # Salva novamente com o código (não chama save() recursivo)
-            kwargs['force_insert'] = False 
-            super().save(update_fields=['codigo_op'], *args, **kwargs)
-        else:
-            super().save(*args, **kwargs)
-
-    # --- Métodos de Lógica de Negócio (Exemplos) ---
-    
-    def liberar_producao(self):
-        """Muda o status para LIBERADA e dispara a baixa de estoque (BOM)."""
-        if self.status == self.StatusOP.PLANEJADA:
-            self.status = self.StatusOP.LIBERADA
-            self.save()
-            #
-            # !! AQUI É O GATILHO !!
-            # Aqui você chamaria a lógica para verificar a Lista de Materiais (BOM)
-            # do self.produto e dar a baixa no estoque dos componentes.
-            # (ex: self.produto.bom.reservar_estoque(self.quantidade_planejada))
-            #
-            print(f"OP {self.codigo_op} liberada. Disparar baixa de estoque.")
-
-    def iniciar_producao(self):
-        """Marca a data de início real."""
-        if self.status == self.StatusOP.LIBERADA:
-            self.status = self.StatusOP.EM_PRODUCAO
-            self.data_inicio_real = timezone.now()
-            self.save()
-            print(f"OP {self.codigo_op} iniciada.")
-
-    def concluir_producao(self, quantidade_boa):
-        """Finaliza a OP e dispara a entrada do produto acabado no estoque."""
-        if self.status == self.StatusOP.EM_PRODUCAO or self.status == self.StatusOP.CONTROLE_QUALIDADE:
-            self.status = self.StatusOP.CONCLUIDA
-            self.data_conclusao_real = timezone.now()
-            self.quantidade_produzida = quantidade_boa
-            self.save()
-            #
-            # !! AQUI É O GATILHO !!
-            # Aqui você chamaria a lógica para dar entrada do 
-            # self.produto no estoque (quantidade_boa).
-            # (ex: self.produto.dar_entrada_estoque(quantidade_boa))
-            #
-            print(f"OP {self.codigo_op} concluída. Entrada de {quantidade_boa} no estoque.")
-
-class OrdemProducao(models.Model):
-    pass
-    STATUS_CHOICES = [
-        ('PLA', 'Planejada'),
-        ('LIB', 'Liberada para Produção'),
-        ('EXE', 'Em Execução'),
-        ('CON', 'Concluída'),
-        ('CAN', 'Cancelada'),
-    ]
-    produto = models.ForeignKey(
-        ProdutoFabricado, 
-        on_delete=models.PROTECT,
-        help_text="O item que será produzido."
-    )
-    quantidade_planejada = models.DecimalField(
-        max_digits=10, 
-        decimal_places=2,
-        default=1.00,
-        help_text="Quantidade que se planeja produzir."
-    )
-    quantidade_produzida = models.DecimalField(
-        max_digits=10, 
-        decimal_places=2,
-        default=0,
-        help_text="Quantidade realmente finalizada."
-    )
     projeto = models.ForeignKey(
         Projeto, 
-        on_delete=models.SET_NULL, 
+        on_delete=models.SET_NULL,
         null=True, 
         blank=True,
         related_name='ordens_producao',
-        help_text="Projeto ao qual esta produção está vinculada."
+        help_text="Projeto ao qual esta OP está vinculada"
     )
     demanda_origem = models.ForeignKey(
         Demanda,
@@ -456,14 +355,11 @@ class OrdemProducao(models.Model):
         related_name='ordens_geradas',
         help_text="Demanda de cliente/projeto que originou esta OP."
     )
-    status = models.CharField(max_length=3, choices=STATUS_CHOICES, default='PLA')
-    data_criacao = models.DateTimeField(default=timezone.now, editable=False)
-    tempo_execucao_preivista = models.DateField(verbose_name="Término Previsto", null=True, blank=True)
-    data_real_termino = models.DateTimeField(
-        null=True, 
-        blank=True,
-        verbose_name="Data de Conclusão Real"
+    quantidade_produzida = models.PositiveIntegerField(
+        default=0,
+        help_text="Quantidade real que foi produzida com sucesso"
     )
+    observacoes = models.TextField(blank=True, null=True)
     custo_estimado = models.DecimalField(
         max_digits=12, 
         decimal_places=2, 
@@ -478,21 +374,57 @@ class OrdemProducao(models.Model):
         blank=True,
         help_text="Custo real apurado após o consumo de materiais."
     )
-    observacoes = models.TextField(blank=True, null=True)
+    class Meta:
+        ordering = ['-data_emissao'] 
+        verbose_name = "Ordem de Produção"
+        verbose_name_plural = "Ordens de Produção"
+
     def __str__(self):
-        return f"OP-{self.id} | {self.quantidade_planejada} x {self.produto.codigo_item}"
+        return f"{self.codigo_op or '[NOVA]'} ({self.get_status_display()}) - {self.produto}"
 
     def save(self, *args, **kwargs):
         if self.pk is None and self.produto:
-            if self.produto.custo_producao_calculado:
-                self.custo_estimado = self.quantidade_planejada * self.produto.custo_producao_calculado
+            if self.produto.custo_producao_calculado is not None:
+                qtd = Decimal(self.quantidade_planejada)
+                self.custo_estimado = qtd * self.produto.custo_producao_calculado
         
-        super().save(*args, **kwargs)
+        if not self.id and not self.codigo_op:
+            super().save(*args, **kwargs) 
+            
+            self.codigo_op = f'OP-{self.id:05d}'
+            kwargs['force_insert'] = False 
+            super().save(update_fields=['codigo_op'], *args, **kwargs)
+        else:
+            super().save(*args, **kwargs)
 
-    class Meta:
-        verbose_name = "Ordem de Produção"
-        verbose_name_plural = "Ordens de Produção"
-        ordering = ['-data_criacao', 'status']
+    def liberar_producao(self):
+        """Muda o status para LIBERADA e dispara a baixa de estoque (BOM)."""
+        if self.status == self.StatusOP.PLANEJADA:
+            self.status = self.StatusOP.LIBERADA
+            self.save(update_fields=['status'])
+            # ... (sua lógica futura de baixa de estoque) ...
+            print(f"OP {self.codigo_op} liberada. Disparar baixa de estoque.")
+
+    def iniciar_producao(self):
+        """Marca a data de início real."""
+        if self.status == self.StatusOP.LIBERADA:
+            self.status = self.StatusOP.EM_PRODUCAO
+            self.data_inicio_real = timezone.now()
+            self.save(update_fields=['status', 'data_inicio_real'])
+            print(f"OP {self.codigo_op} iniciada.")
+
+    def concluir_producao(self, quantidade_boa):
+        """Finaliza a OP e dispara a entrada do produto acabado no estoque."""
+        if self.status == self.StatusOP.EM_PRODUCAO or self.status == self.StatusOP.CONTROLE_QUALIDADE:
+            self.status = self.StatusOP.CONCLUIDA
+            self.data_conclusao_real = timezone.now()
+            self.quantidade_produzida = quantidade_boa
+            self.save(update_fields=['status', 'data_conclusao_real', 'quantidade_produzida'])
+            # ... (sua lógica futura de entrada de estoque) ...
+            print(f"OP {self.codigo_op} concluída. Entrada de {quantidade_boa} no estoque.")
+
+# FIM - NÃO ESQUEÇA DE IMPORTAR 'decimal' NO TOPO DO ARQUIVO
+# from decimal import Decimal
 
 class OrdemCompra(models.Model):
     pass
@@ -550,9 +482,69 @@ class DefeitoEquipamento(models.Model):
     class Meta:
         ordering = ['equipamento']
 
+# Em models.py
+
 @receiver(post_save, sender=EstruturaProduto)
 def atualizar_preco_produto(sender, instance, **kwargs):
-    produto = instance.produto_pai
-    estrutura = EstruturaProduto.objects.filter(produto_pai=produto)
-    produto.preco_final = sum(c.componente_filho.preco_custo_compra * c.quantidade for c in estrutura )
-    produto.save()
+    """
+    Calcula o custo total de um ProdutoFabricado somando o custo
+    de seus componentes (sejam Matérias-Primas ou outros ProdutosFabricados).
+    """
+    
+    produto = instance.produto_pai 
+
+    estrutura = EstruturaProduto.objects.filter(
+        produto_pai=produto
+    ).select_related(
+        'componente_filho__materiaprima', 
+        'componente_filho__produtofabricado'
+    )
+
+    total_cost = 0
+
+    for c in estrutura:
+        componente = c.componente_filho  # Este é um objeto 'Item' genérico
+        custo_componente = 0
+        
+        if hasattr(componente, 'materiaprima'):
+            custo_componente = componente.materiaprima.preco_custo_compra
+        elif hasattr(componente, 'produtofabricado'):
+            custo_componente = componente.produtofabricado.custo_producao_calculado
+
+        total_cost += (custo_componente * c.quantidade)
+
+    produto.custo_producao_calculado = total_cost
+    produto.save(update_fields=['custo_producao_calculado'])
+
+class ItemInstalacao(models.Model):
+    """
+    Define os 'acessórios' ou 'kits' necessários para a 
+    instalação de um produto no cliente (ex: cabos, suportes).
+    NÃO é o BOM de fabricação.
+    """
+    produto_pai = models.ForeignKey(
+        ProdutoFabricado, 
+        on_delete=models.CASCADE, 
+        related_name='itens_instalacao',
+        help_text="O produto principal que será instalado."
+    )
+    item_acessorio = models.ForeignKey(
+        Item, 
+        on_delete=models.PROTECT, 
+        help_text="O item necessário para a instalação (cabo, suporte, etc.)"
+    )
+    quantidade = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=1,
+        help_text="Quantidade do acessório necessária por instalação."
+    )
+
+    class Meta:
+        verbose_name = "Item de Instalação"
+        verbose_name_plural = "Itens de Instalação (Kit)"
+        # Garante que você não adicione o mesmo cabo duas vezes
+        unique_together = ('produto_pai', 'item_acessorio')
+
+    def __str__(self):
+        return f"{self.quantidade} x {self.item_acessorio.descricao} (para {self.produto_pai.codigo_item})"

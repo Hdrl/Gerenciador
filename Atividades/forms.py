@@ -16,7 +16,7 @@ class ProjetoForm(forms.ModelForm):
 class DemandaForm(forms.ModelForm):
     class Meta:
         model = Demanda
-        fields = ['nome', 'quantidade', 'produto', 'projeto']
+        fields = ['nome', 'quantidade_total', 'quantidade_reserva', 'produto', 'projeto']
 
 class AtividadeForm(forms.ModelForm):
     produto = forms.ModelChoiceField(

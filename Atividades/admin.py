@@ -1,47 +1,74 @@
 from django.contrib import admin
-from .models import OrdemProducao, Transporte ,Fornecedor, Item, MateriaPrima, ProdutoFabricado, EstruturaProduto, Projeto, Demanda, Atividade, OrdemServico, Equipamento, Endereco, Empresa, Transportadora, DefeitoComponente
-
+from .models import ItemInstalacao, OrdemProducao, Transporte ,Fornecedor, Item, MateriaPrima, ProdutoFabricado, EstruturaProduto, Projeto, Demanda, Atividade, OrdemServico, Equipamento, Endereco, Empresa, Transportadora, DefeitoComponente
 from django.contrib import admin, messages
 from django.utils import timezone
-from .models import OrdemProducao 
-# Importe também seus outros modelos se precisar deles para Inlines
-# ex: from produtos.models import ProdutoFabricado
+from .models import OrdemProducao
+from decimal import Decimal
+from django.contrib import admin, messages
+from django.http import HttpResponse
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import cm 
+
+class ItemInstalacaoInline(admin.TabularInline):
+    model = ItemInstalacao
+    fk_name = 'produto_pai'
+    fields = ('item_acessorio', 'quantidade')
+    raw_id_fields = ('item_acessorio',) 
+    extra = 1
+    verbose_name_plural = "Componentes para Instalação"
+
+class EstruturaProdutoInline(admin.TabularInline):
+    """
+    Permite editar os componentes (BOM) diretamente na página do Produto Fabricado.
+    'TabularInline' é mais compacto e ideal para listas de componentes.
+    """
+    model = EstruturaProduto
+    fk_name = 'produto_pai'
+    fields = ('componente_filho', 'quantidade')
+    raw_id_fields = ('componente_filho',)
+    extra = 1
+    verbose_name = "Componente da Estrutura"
+    verbose_name_plural = "Componentes para Produção"
+
+class DemandaInline(admin.TabularInline):
+    model = Demanda
+    fk_name = 'projeto'
+    fields = ('produto', 'quantidade_total', 'quantidade_reserva')
+    extra = 1
+    verbose_name = "Demanda do Projeto"
+    verbose_name_plural = "Demandas do Projeto"
+    raw_id_fields = ('produto',)
 
 @admin.register(OrdemProducao)
 class OrdemProducaoAdmin(admin.ModelAdmin):
     """
     Configuração personalizada do Admin para Ordens de Produção.
+    (VERSÃO CORRIGIDA)
     """
-
-    # --- AÇÕES CUSTOMIZADAS (O mais importante!) ---
-    # Permite que você execute a lógica de negócio da sua OP
-    # diretamente da lista do admin.
-    
+    #
+    # SUAS ACTIONS (estão corretas e não mudam)
+    #
     @admin.action(description='1. Liberar OPs selecionadas para produção')
     def marcar_como_liberada(self, request, queryset):
-        """
-        Executa a ação de 'liberar_producao' do modelo.
-        """
+        # ... (seu código da action) ...
+        # (Atualiza para o status correto do modelo)
         count = 0
         total = queryset.count()
-        
-        # Filtra apenas as que podem ser liberadas
         ops_para_liberar = queryset.filter(status=OrdemProducao.StatusOP.PLANEJADA)
-        
         for op in ops_para_liberar:
-            op.liberar_producao()  # Chama o método do seu modelo
+            op.liberar_producao() 
             count += 1
-            
+        # ... (o resto da sua action) ...
         if count > 0:
             self.message_user(request, f"{count} de {total} OPs foram liberadas.", messages.SUCCESS)
         if count < total:
             self.message_user(request, f"{total - count} OPs já estavam em outro status e não foram liberadas.", messages.WARNING)
 
+
     @admin.action(description='2. Marcar OPs selecionadas como "Em Produção"')
     def marcar_como_iniciada(self, request, queryset):
-        """
-        Inicia a produção das OPs que estão 'LIBERADA'.
-        """
+        # (Atualiza para o status correto do modelo)
         updated_count = queryset.filter(status=OrdemProducao.StatusOP.LIBERADA).update(
             status=OrdemProducao.StatusOP.EM_PRODUCAO,
             data_inicio_real=timezone.now()
@@ -50,68 +77,60 @@ class OrdemProducaoAdmin(admin.ModelAdmin):
 
     @admin.action(description='3. Concluir OPs selecionadas (Qtd. Produzida = Qtd. Planejada)')
     def marcar_como_concluida(self, request, queryset):
-        """
-        Ação de conclusão rápida. Assume que a Qtd. Produzida é igual à Planejada.
-        """
+        # ... (seu código da action, atualizado para os status corretos) ...
         updated_count = 0
         valid_statuses = [
             OrdemProducao.StatusOP.EM_PRODUCAO, 
             OrdemProducao.StatusOP.CONTROLE_QUALIDADE
         ]
-        
         ops_para_concluir = queryset.filter(status__in=valid_statuses)
 
         for op in ops_para_concluir:
-            op.status = OrdemProducao.StatusOP.CONCLUIDA
-            op.data_conclusao_real = timezone.now()
-            op.quantidade_produzida = op.quantidade_planejada  # Suposição da ação
-            op.save()
+            # Chama o método que criamos, em vez de lógica manual
+            op.concluir_producao(quantidade_boa=op.quantidade_planejada) 
             updated_count += 1
             
         self.message_user(request, f"{updated_count} OPs foram concluídas com sucesso.", messages.SUCCESS)
 
-    # --- Configuração da Lista de Exibição ---
+    #
+    # --- CORREÇÕES ABAIXO ---
+    #
+    
     list_display = (
-        'codigo_op',
+        'codigo_op', # Adicionado para ficar mais fácil de ver
         'status',
         'produto',
         'quantidade_planejada',
-        'data_prevista_conclusao',
-        'data_emissao',
-        'solicitante',
+        'data_prevista_conclusao',  # CORRETO: 'tempo_execucao_preivista' -> 'data_prevista_conclusao'
+        'data_emissao',             # CORRETO: 'data_criacao' -> 'data_emissao'
     )
     
-    # --- Filtros (essencial para PCP) ---
     list_filter = (
         'status',
-        'data_prevista_conclusao',
-        'data_emissao',
+        'data_prevista_conclusao',  # CORRETO: 'tempo_execucao_preivista' -> 'data_prevista_conclusao'
+        'data_emissao',             # CORRETO: 'data_criacao' -> 'data_emissao'
         'produto',
-        'solicitante',
         'projeto',
     )
     
-    # --- Barra de Pesquisa ---
     search_fields = (
-        'codigo_op',
-        'produto__codigo',  # Assumindo que seu modelo Produto tem um campo 'codigo'
-        'produto__descricao', # Assumindo que seu modelo Produto tem 'descricao'
-        'solicitante__username',
-        'projeto__nome', # Assumindo que seu modelo Projeto tem 'nome'
+        'codigo_op', # Adicionado
+        'produto__codigo_item',
+        'produto__descricao', 
+        'projeto__nome', 
     )
     
-    # --- Campos que não podem ser editados manualmente ---
-    # O código OP e datas de log são controlados pelo sistema
     readonly_fields = (
-        'codigo_op',
-        'data_emissao',
-        'data_inicio_real',
-        'data_conclusao_real',
-        'quantidade_produzida', # Deve ser atualizado por uma ação ou na conclusão
+        'codigo_op',             # Adicionado (é auto-gerado)
+        'data_emissao',          # CORRETO: 'data_criacao' -> 'data_emissao'
+        'data_conclusao_real',   # CORRETO: 'data_real_termino' -> 'data_conclusao_real'
+        'quantidade_produzida',
+        'custo_estimado',        # Adicionado (é auto-calculado)
+        'custo_real',
     )
 
     # --- Organização do Formulário de Edição ---
-    # Divide o formulário em seções lógicas
+    # (Este já estava correto no seu arquivo original)
     fieldsets = (
         ('Informações Principais', {
             'fields': (
@@ -119,6 +138,12 @@ class OrdemProducaoAdmin(admin.ModelAdmin):
                 'status',
                 'produto',
                 'quantidade_planejada',
+            )
+        }),
+        ('Custos (Calculados)', {
+            'fields': (
+                'custo_estimado',
+                'custo_real',
             )
         }),
         ('Datas', {
@@ -133,6 +158,7 @@ class OrdemProducaoAdmin(admin.ModelAdmin):
             'fields': (
                 'solicitante',
                 'projeto',
+                'demanda_origem', # Adicionado
             )
         }),
         ('Resultados e Observações', {
@@ -143,13 +169,118 @@ class OrdemProducaoAdmin(admin.ModelAdmin):
         }),
     )
 
-    # --- Adiciona as Ações ao Admin ---
+    @admin.action(description='📋 Gerar Lista de Separação (BOM) para OPs selecionadas')
+    def gerar_lista_separacao_producao(self, request, queryset):
+        
+        # 1. VALIDAÇÃO: Garante que só OPs 'Liberadas' ou 'Planejadas' entrem
+        ops_validas = queryset.filter(
+            status__in=[
+                OrdemProducao.StatusOP.PLANEJADA, 
+                OrdemProducao.StatusOP.LIBERADA
+            ]
+        )
+        
+        if not ops_validas.exists():
+            self.message_user(request, 
+                              "Nenhuma OP selecionada é válida (devem ser 'Planejada' ou 'Liberada').", 
+                              messages.ERROR)
+            return
+
+        # 2. LÓGICA DE AGREGAÇÃO (A "EXPLOSÃO" DO BOM)
+        
+        # Otimiza a consulta ao banco de dados
+        ops_para_processar = ops_validas.prefetch_related(
+            'produto__componentes__componente_filho' # Otimização crucial
+        )
+
+        lista_materiais_agregada = {} # Dicionário para consolidar os totais
+        op_codes = [] # Lista de OPs incluídas
+
+        for op in ops_para_processar:
+            op_codes.append(op.codigo_op)
+            # Converte a quantidade da OP para Decimal
+            qtd_a_produzir = Decimal(op.quantidade_planejada)
+            
+            # Pega o BOM (EstruturaProduto) do produto da OP
+            # Graças ao prefetch_related, isto não gera nova consulta
+            bom_do_produto = op.produto.componentes.all() 
+            
+            for componente in bom_do_produto:
+                nome_item = componente.componente_filho.descricao
+                # Pega o 'codigo_item' para referência
+                cod_item = componente.componente_filho.codigo_item
+                # Pega a unidade de medida
+                unidade = componente.componente_filho.get_unidade_medida_display()
+                
+                # Calcula a quantidade necessária deste componente
+                # (Qtd da OP * Qtd do BOM)
+                qtd_total_componente = componente.quantidade * qtd_a_produzir
+                
+                # Cria uma chave única (código + nome) para o dicionário
+                chave_item = f"({cod_item}) {nome_item}"
+                
+                # Pega o valor atual (ou 0) e soma o novo valor
+                valor_anterior = lista_materiais_agregada.get(chave_item, (Decimal(0), unidade))[0]
+                
+                # Armazena (Quantidade Total, Unidade)
+                lista_materiais_agregada[chave_item] = (valor_anterior + qtd_total_componente, unidade)
+
+        if not lista_materiais_agregada:
+            self.message_user(request, "As OPs selecionadas não possuem uma Lista de Materiais (BOM) definida.", messages.WARNING)
+            return
+
+        # 3. GERAR O PDF
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="lista_separacao_producao.pdf"'
+
+        p = canvas.Canvas(response, pagesize=A4)
+        width, height = A4
+        
+        p.setFont("Helvetica-Bold", 16)
+        p.drawString(2*cm, height - 2*cm, "Lista de Separação para Produção")
+
+        p.setFont("Helvetica", 9)
+        p.drawString(2*cm, height - 2.7*cm, f"OPs consolidadas: {', '.join(op_codes)}")
+        
+        y = height - 4*cm # Posição inicial Y
+        
+        # Cabeçalho da tabela
+        p.setFont("Helvetica-Bold", 11)
+        p.drawString(2*cm, y, "Quantidade")
+        p.drawString(5*cm, y, "Unidade")
+        p.drawString(8*cm, y, "Item (Código e Descrição)")
+        p.line(2*cm, y - 0.2*cm, width - 2*cm, y - 0.2*cm)
+        y -= 0.7*cm
+        
+        p.setFont("Helvetica", 10)
+        # Ordena a lista pelo nome do item
+        itens_ordenados = sorted(lista_materiais_agregada.items())
+
+        for item_nome, (quantidade, unidade) in itens_ordenados:
+            if y < 3*cm: # Se chegar no fim da página
+                p.showPage()
+                p.setFont("Helvetica", 10)
+                y = height - 2*cm # Reseta o Y
+
+            # Escreve a linha
+            p.drawString(2*cm, y, str(quantidade))
+            p.drawString(5*cm, y, str(unidade))
+            p.drawString(8*cm, y, item_nome)
+            y -= 0.7*cm # Próxima linha
+
+        p.showPage()
+        p.save()
+
+        return response
+    
+    # --- C. Registre TODAS as suas actions ---
     actions = [
         'marcar_como_liberada',
         'marcar_como_iniciada',
         'marcar_como_concluida',
+        'gerar_lista_separacao_producao', # Adicione a nova
     ]
-    
+
 @admin.register(Transportadora)
 class TransportadoraoAdmin(admin.ModelAdmin):
     list_display = ('razao_social', 'nome_contato', 'telefone', 'observacoes')
@@ -196,23 +327,6 @@ class EquipamentoAdmin(admin.ModelAdmin):
     list_filter = ('projeto_alocado',)
     list_per_page = 20  
 
-@admin.register(Demanda)
-class DemandaAdmin(admin.ModelAdmin):
-    list_display = ('produto', 'quantidade', 'projeto', 'finalizado')
-    search_fields = ('projeto_nome', 'produto__codigo_item')
-    list_filter = ('projeto',)
-    list_per_page = 20
-    ordering = ('-projeto',)
-
-@admin.register(Projeto)
-class ProjetoAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'status', 'data_inicio', 'data_fim')
-    search_fields = ('nome',)
-    list_filter = ('status',)
-    list_per_page = 20
-    ordering = ('-data_inicio',)
-    
-# 1. Configuração para o modelo Fornecedor
 @admin.register(Fornecedor)
 class FornecedorAdmin(admin.ModelAdmin):
     """
@@ -222,32 +336,6 @@ class FornecedorAdmin(admin.ModelAdmin):
     search_fields = ('razao_social', 'cnpj')
     list_per_page = 20
 
-
-# 2. Configuração da Estrutura de Produto (BOM) como um "Inline"
-class EstruturaProdutoInline(admin.TabularInline):
-    """
-    Permite editar os componentes (BOM) diretamente na página do Produto Fabricado.
-    'TabularInline' é mais compacto e ideal para listas de componentes.
-    """
-    model = EstruturaProduto
-    # 'fk_name' especifica qual chave estrangeira no modelo 'EstruturaProduto'
-    # se refere ao modelo pai (ProdutoFabricado).
-    fk_name = 'produto_pai'
-    
-    # Campos que aparecerão na linha de edição do componente.
-    fields = ('componente_filho', 'quantidade')
-    
-    # Para catálogos grandes, 'raw_id_fields' substitui o dropdown de seleção
-    # por um campo de busca com lupa, muito mais performático e usável.
-    raw_id_fields = ('componente_filho',)
-    
-    # Quantidade de linhas extras para adicionar novos componentes.
-    extra = 1
-    verbose_name = "Componente da Estrutura"
-    verbose_name_plural = "Componentes da Estrutura (Bill of Materials)"
-
-
-# 3. Configuração para o modelo base Item
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
     """
@@ -273,8 +361,6 @@ class ItemAdmin(admin.ModelAdmin):
         # Opcional: Impede a edição por aqui também, forçando o uso da admin correta.
         return False
 
-
-# 4. Configuração para o modelo MateriaPrima
 @admin.register(MateriaPrima)
 class MateriaPrimaAdmin(admin.ModelAdmin):
     """
@@ -300,7 +386,7 @@ class MateriaPrimaAdmin(admin.ModelAdmin):
 
 @admin.register(ProdutoFabricado)
 class ProdutoFabricadoAdmin(admin.ModelAdmin):
-    inlines = [EstruturaProdutoInline]
+    inlines = [EstruturaProdutoInline, ItemInstalacaoInline]
     
     list_display = ('codigo_item', 'descricao', 'custo_producao_calculado', 'tempo_de_garantia_meses')
     
@@ -319,8 +405,6 @@ class ProdutoFabricadoAdmin(admin.ModelAdmin):
         }),
     )
 
-# Opcional: Registrar EstruturaProduto para ter uma visão global, se desejado.
-# Geralmente, a edição pelo inline é suficiente.
 @admin.register(EstruturaProduto)
 class EstruturaProdutoAdmin(admin.ModelAdmin):
     """
@@ -331,3 +415,140 @@ class EstruturaProdutoAdmin(admin.ModelAdmin):
     search_fields = ('produto_pai__codigo_item', 'componente_filho__codigo_item')
     raw_id_fields = ('produto_pai', 'componente_filho')
     list_per_page = 30
+
+@admin.register(Demanda)
+class DemandaAdmin(admin.ModelAdmin):
+    list_display = ('produto', 'quantidade_total', 'quantidade_reserva', 'projeto', 'finalizado')
+    search_fields = ('projeto_nome', 'produto__codigo_item')
+    list_filter = ('projeto',)
+    list_per_page = 20
+    ordering = ('-projeto',)
+
+@admin.register(Projeto)
+class ProjetoAdmin(admin.ModelAdmin):
+    inlines = [DemandaInline]
+    list_display = ('nome', 'status', 'data_inicio', 'data_fim')
+    search_fields = ('nome',)
+    list_filter = ('status',)
+    list_per_page = 20
+    ordering = ('-data_inicio',)
+    fieldsets = (
+        ('Dados Gerais', { 
+            'fields': ('nome', 'status', 'data_inicio', 'data_fim')
+        }),
+    )
+
+    @admin.action(description='🖨️ Gerar Relatorio Instalção (PDF) para o projeto selecionado')
+    def gerar_romaneio_action(self, request, queryset):
+        
+        # 1. VALIDAÇÃO: Garantir que apenas UM projeto foi selecionado
+        if queryset.count() != 1:
+            self.message_user(request, 
+                              "Esta ação só pode ser executada para um projeto de cada vez.", 
+                              messages.ERROR)
+            return
+
+        # 2. PEGAR O PROJETO
+        projeto = queryset.first()
+
+        # 3. PROCESSAR A LÓGICA DO ROMANEIO (Idêntica à view)
+        demandas_do_projeto = projeto.demandas.prefetch_related(
+            'produto',
+            'produto__itens_instalacao',
+            'produto__itens_instalacao__item_acessorio'
+        )
+
+        lista_romaneio = {}
+        for demanda in demandas_do_projeto:
+            produto_nome = demanda.produto.descricao
+            # A. Adiciona o Produto Principal
+            lista_romaneio[produto_nome] = lista_romaneio.get(produto_nome, 0) + demanda.quantidade_total
+            
+            # B. Adiciona os Itens de Instalação (Kit)
+            qtd_para_instalar = demanda.quantidade_instalacao 
+            if qtd_para_instalar > 0:
+                for item_kit in demanda.produto.itens_instalacao.all():
+                    acessorio_nome = item_kit.item_acessorio.descricao
+                    qtd_acessorio = item_kit.quantidade * qtd_para_instalar
+                    lista_romaneio[acessorio_nome] = lista_romaneio.get(acessorio_nome, 0) + qtd_acessorio
+
+        # 4. GERAR O ARQUIVO PDF (Idêntico à view)
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="romaneio_{projeto.nome}.pdf"'
+
+        p = canvas.Canvas(response, pagesize=A4)
+        width, height = A4
+        
+        p.setFont("Helvetica-Bold", 16)
+        p.drawString(2*cm, height - 2*cm, f"Romaneio de Carga - Projeto: {projeto.nome}")
+        
+        y = height - 3.5*cm 
+        p.setFont("Helvetica-Bold", 11)
+        p.drawString(2*cm, y, "Quantidade")
+        p.drawString(6*cm, y, "Descrição do Item")
+        p.line(2*cm, y - 0.2*cm, width - 2*cm, y - 0.2*cm)
+        y -= 0.7*cm
+        
+        p.setFont("Helvetica", 10)
+        itens_ordenados = sorted(lista_romaneio.items())
+
+        for nome_item, quantidade in itens_ordenados:
+            if y < 3*cm:
+                p.showPage()
+                p.setFont("Helvetica", 10)
+                y = height - 2*cm 
+
+            p.drawString(2*cm, y, str(int(quantidade)))
+            p.drawString(6*cm, y, nome_item)
+            y -= 0.7*cm 
+
+        p.showPage()
+        p.save()
+
+        # 5. RETORNAR O PDF
+        # Em vez de uma página, a action retorna o arquivo direto
+        return response
+
+    @admin.action(description='⚙️ Gerar Ordens de Produção (OPs) para as demandas')
+    def gerar_ordens_producao(self, request, queryset):
+        
+        ops_criadas_count = 0
+        demandas_processadas_count = 0
+        
+        for projeto in queryset:
+            demandas = projeto.demandas.all()
+            
+            for demanda in demandas:
+                demandas_processadas_count += 1
+                
+                op_existente = OrdemProducao.objects.filter(demanda_origem=demanda).exists()
+                
+                if not op_existente:
+                    OrdemProducao.objects.create(
+                        produto=demanda.produto,
+                        # Use a quantidade_total da demanda
+                        quantidade_planejada=demanda.quantidade_total, 
+                        projeto=projeto,
+                        demanda_origem=demanda,
+                        solicitante=request.user, # Bônus: registra quem clicou
+                        
+                        # AQUI ESTÁ A MUDANÇA:
+                        # Usando o TextChoice do seu modelo
+                        status=OrdemProducao.StatusOP.PLANEJADA 
+                    )
+                    ops_criadas_count += 1
+        
+        if ops_criadas_count > 0:
+            self.message_user(request, 
+                              f"{ops_criadas_count} novas Ordens de Produção foram criadas.", 
+                              messages.SUCCESS)
+        else:
+            self.message_user(request, 
+                              "Nenhuma nova OP precisou ser criada (todas as demandas já tinham OPs).", 
+                              messages.WARNING)
+
+    # --- Registre as duas actions ---
+    actions = [
+        'gerar_romaneio_action', 
+        'gerar_ordens_producao'
+    ]
