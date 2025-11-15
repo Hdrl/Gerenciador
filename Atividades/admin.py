@@ -24,7 +24,6 @@ class ItemVolumeInline(admin.TabularInline):
     model = ItemVolume
     fk_name = 'volume'
     fields = ('produto', 'quantidade')
-    raw_id_fields = ('produto',)
     extra = 1
     verbose_name_plural = "Conteúdo do Volume (Caixa Mista)"
 
@@ -32,7 +31,6 @@ class ItemInstalacaoInline(admin.TabularInline):
     model = ItemInstalacao
     fk_name = 'produto_pai'
     fields = ('item_acessorio', 'quantidade')
-    raw_id_fields = ('item_acessorio',) 
     extra = 1
     verbose_name_plural = "Componentes para Instalação"
 
@@ -40,7 +38,6 @@ class EstruturaProdutoInline(admin.TabularInline):
     model = EstruturaProduto
     fk_name = 'produto_pai'
     fields = ('componente_filho', 'quantidade')
-    raw_id_fields = ('componente_filho',)
     extra = 1
     verbose_name = "Componente da Estrutura"
     verbose_name_plural = "Componentes para Produção"
@@ -52,24 +49,6 @@ class DemandaInline(admin.TabularInline):
     extra = 1
     verbose_name = "Demanda do Projeto"
     verbose_name_plural = "Demandas do Projeto"
-    raw_id_fields = ('produto',)
-
-# <-- CORREÇÃO: Adicionámos o AtividadeInline que faltava -->
-class AtividadeInline(admin.TabularInline):
-    model = Atividade
-    fk_name = 'projeto'
-    fields = ('nome', 'responsavel', 'quantidade_feita', 'quantidade_total', 'status')
-    extra = 1
-    verbose_name_plural = "Tarefas de Produção (Cortes)"
-    
-    # Exemplo de como mostrar campos 'readonly' (se precisar)
-    # readonly_fields = ('faltam',) 
-    # def faltam(self, obj):
-    #     return obj.faltam
-    # faltam.short_description = "Faltam"
-
-
-# --- ADMINS PRINCIPAIS ---
 
 @admin.register(OrdemProducao)
 class OrdemProducaoAdmin(admin.ModelAdmin):
@@ -282,7 +261,6 @@ class ProdutoFabricadoAdmin(admin.ModelAdmin):
 class EstruturaProdutoAdmin(admin.ModelAdmin):
     list_display = ('produto_pai', 'componente_filho', 'quantidade')
     search_fields = ('produto_pai__codigo_item', 'componente_filho__codigo_item')
-    raw_id_fields = ('produto_pai', 'componente_filho')
 
 @admin.register(Demanda)
 class DemandaAdmin(admin.ModelAdmin):
@@ -296,7 +274,7 @@ class DemandaAdmin(admin.ModelAdmin):
 @admin.register(Projeto)
 class ProjetoAdmin(admin.ModelAdmin):
     # <-- CORREÇÃO: Adicionámos os inlines corretos -->
-    inlines = [DemandaInline, AtividadeInline] 
+    inlines = [DemandaInline] 
     
     list_display = ('nome', 'status', 'data_inicio', 'data_fim')
     search_fields = ('nome',)
@@ -436,7 +414,6 @@ class VolumeAdmin(admin.ModelAdmin):
     
     list_filter = ('data_embalado', 'projeto')
     search_fields = ('codigo_volume', 'projeto__nome')
-    raw_id_fields = ('projeto',)
     
     # 1. A ACTION DE ETIQUETA (Permanece)
     @admin.action(description='🏷️ Gerar Etiqueta(s) de Volume (HTML)')
@@ -510,10 +487,6 @@ class VolumeAdmin(admin.ModelAdmin):
 
         return HttpResponse(html_renderizado)
 
-    # Em seu_app/admin.py
-
-# ... (dentro da classe VolumeAdmin) ...
-
     # 2. A NOVA ACTION DE "CLONAR"
     @admin.action(description='🔄 Clonar Volume(s) selecionado(s)...')
     def clonar_volumes_action(self, request, queryset):
@@ -573,8 +546,6 @@ class VolumeAdmin(admin.ModelAdmin):
             }
             # Renderiza o template que vamos criar
             return render(request, 'admin/clonar_volumes_intermediate.html', context)
-
-
     # 3. REGISTRE AS DUAS ACTIONS
     actions = ['gerar_etiqueta_volume_action', 'clonar_volumes_action']
     

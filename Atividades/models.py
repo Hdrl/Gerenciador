@@ -575,8 +575,8 @@ class Volume(models.Model):
     # ex: peso_total, dimensoes, transportadora, etc.
 
     class Meta:
-        verbose_name = "Volume (Caixa/Pallet)"
-        verbose_name_plural = "Volumes (Caixas/Pallets)"
+        verbose_name = "Volume"
+        verbose_name_plural = "Volumes"
         ordering = ['-data_embalado']
 
     def __str__(self):
