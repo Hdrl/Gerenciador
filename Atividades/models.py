@@ -586,7 +586,7 @@ class Volume(models.Model):
         # Gera um código de volume automático
         if not self.id and not self.codigo_volume:
             super().save(*args, **kwargs) # Salva para obter um ID
-            self.codigo_volume = f'VOL-{self.id:05d}'
+            self.codigo_volume = f'COD-{self.id:05d}'
             kwargs['force_insert'] = False 
             super().save(update_fields=['codigo_volume'], *args, **kwargs)
         else:
