@@ -44,7 +44,8 @@ INSTALLED_APPS = [
     'Atividades',
     'crispy_forms',
     'crispy_bootstrap5',
-    'corsheaders'
+    'corsheaders',
+    'viagens'
 ]
 
 MIDDLEWARE = [

@@ -1,0 +1,225 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrahead %}
+  {{ block.super }}
+  <style>
+    /* Ajustes Específicos para o Scanner */
+    .scanner-wrapper {
+        position: relative;
+        width: 100%;
+        background-color: #000;
+        border-radius: 0.25rem;
+        overflow: hidden;
+        /* Mantém uma proporção agradável em mobile */
+        min-height: 300px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    #canvas {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    /* Animação de "Laser" do Scanner */
+    .scan-line {
+        position: absolute;
+        width: 100%;
+        height: 2px;
+        background: #28a745; /* Verde Success do Bootstrap */
+        box-shadow: 0 0 4px #28a745;
+        top: 0;
+        left: 0;
+        animation: scanning 2.5s infinite linear;
+        z-index: 10;
+        display: none; /* Aparece via JS quando a câmera liga */
+    }
+
+    @keyframes scanning {
+        0% { top: 0; opacity: 0; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { top: 100%; opacity: 0; }
+    }
+
+    /* Feedback de Carregamento */
+    .loading-overlay {
+        position: absolute;
+        color: #fff;
+        text-align: center;
+        z-index: 5;
+    }
+    
+    /* Ajuste para ocultar o vídeo raw */
+    #video { display: none; }
+  </style>
+{% endblock %}
+
+{% block content %}
+<div class="col-12 col-md-8 col-lg-6 mx-auto">
+    
+    <div class="card card-primary card-outline">
+        <div class="card-header">
+            <h3 class="card-title">
+                <i class="fas fa-qrcode mr-2"></i> Leitor de QR Code
+            </h3>
+            <div class="card-tools">
+                <span id="statusBadge" class="badge badge-warning">Aguardando câmera...</span>
+            </div>
+        </div>
+
+        <div class="card-body p-2">
+            
+            <div class="scanner-wrapper shadow-sm">
+                <div class="scan-line" id="scanLine"></div>
+                
+                <div class="loading-overlay" id="loadingMessage">
+                    <div class="spinner-border text-light mb-2" role="status"></div>
+                    <div>Iniciando Câmera...</div>
+                    <small class="text-muted d-block mt-1">Permita o acesso se solicitado</small>
+                </div>
+
+                <video id="video" playsinline></video>
+                <canvas id="canvas" hidden></canvas>
+            </div>
+
+            <form id="autoForm" method="post">
+                {% csrf_token %}
+                <input type="hidden" name="url" id="qrcodeURL">
+            </form>
+
+        </div>
+
+        <div class="card-footer d-flex justify-content-between align-items-center">
+            <a href="../" class="btn btn-secondary">
+                <i class="fas fa-arrow-left mr-1"></i> Voltar
+            </a>
+            
+            <small class="text-muted">
+                Aponte para o código da transação
+            </small>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
+
+<script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const loadingMessage = document.getElementById('loadingMessage');
+    const statusBadge = document.getElementById('statusBadge');
+    const scanLine = document.getElementById('scanLine');
+    
+    let stream = null;
+    let isScanning = true;
+
+    // Configuração da Câmera
+    const constraints = { 
+        video: { 
+            facingMode: "environment",
+            width: { ideal: 1280 },
+            height: { ideal: 720 } 
+        } 
+    };
+
+    navigator.mediaDevices.getUserMedia(constraints)
+    .then(s => {
+        stream = s;
+        video.srcObject = stream;
+        video.setAttribute("playsinline", true);
+        video.play();
+        requestAnimationFrame(tick);
+    })
+    .catch(err => {
+        console.error("Erro:", err);
+        loadingMessage.innerHTML = `<i class="fas fa-exclamation-triangle text-danger fa-2x mb-2"></i><br>Erro ao acessar câmera.<br><small>${err.name}</small>`;
+        statusBadge.className = "badge badge-danger";
+        statusBadge.innerText = "Erro";
+    });
+
+    function tick() {
+        if (!isScanning) return;
+
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            // Oculta loading e mostra canvas
+            loadingMessage.hidden = true;
+            canvas.hidden = false;
+            scanLine.style.display = "block"; // Ativa animação do laser
+            
+            statusBadge.className = "badge badge-success";
+            statusBadge.innerText = "Escaneando...";
+
+            // Sincroniza dimensões
+            canvas.height = video.videoHeight;
+            canvas.width = video.videoWidth;
+
+            // Desenha frame
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Tenta ler QR Code
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: "dontInvert",
+            });
+
+            if (code) {
+                drawBox(code.location);
+                successBeep(); // Feedback sonoro/visual
+                
+                isScanning = false;
+                scanLine.style.display = "none"; // Para animação
+                
+                statusBadge.className = "badge badge-primary";
+                statusBadge.innerText = "Processando...";
+
+                // Envia formulário
+                document.getElementById('qrcodeURL').value = code.data;
+                stopCamera();
+                document.getElementById('autoForm').submit();
+                return;
+            }
+        }
+        requestAnimationFrame(tick);
+    }
+
+    // Desenha a caixa verde ao redor do QR Code encontrado
+    function drawBox(location) {
+        const corners = [
+            location.topLeftCorner,
+            location.topRightCorner,
+            location.bottomRightCorner,
+            location.bottomLeftCorner,
+            location.topLeftCorner
+        ];
+        
+        ctx.beginPath();
+        ctx.moveTo(corners[0].x, corners[0].y);
+        for (let i = 1; i < corners.length; i++) {
+            ctx.lineTo(corners[i].x, corners[i].y);
+        }
+        ctx.lineWidth = 5;
+        ctx.lineCap = "round";
+        ctx.strokeStyle = "#28a745"; // Bootstrap Success Color
+        ctx.stroke();
+    }
+
+    function stopCamera() {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            video.srcObject = null;
+        }
+    }
+    
+    // Opcional: Feedback tátil (vibração) se suportado
+    function successBeep() {
+        if (navigator.vibrate) {
+            navigator.vibrate(200);
+        }
+    }
+</script>
+{% endblock %}
