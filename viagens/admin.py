@@ -11,6 +11,13 @@ from .relatorio import gerar_relatorio_viagem
 from .services import extrair_url_selecionada, extrair_url
 
 locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
+class TransacaoFinanceiraForm(forms.ModelForm):
+    class Meta:
+        model = TransacaoFinanceira
+        fields = '__all__'
+        widgets = {
+            'imagem': forms.ClearableFileInput(attrs={'accept': '*/*'})
+        }
 
 class TransacaoFinanceiraInline(admin.TabularInline):
     model = TransacaoFinanceira
@@ -86,12 +93,7 @@ class TransacaoFinanceiraAdmin(UserFilteredAdmin):
         actions = [extrair_url_selecionada]
         change_list_template = 'admin/viagens/transacaofinanceira/change_list.html'
         exclude = ['usuario']
-        
-        formfield_overrides = {
-            models.ImageField: {
-                'widget': forms.ClearableFileInput(attrs={'accept': 'image/*'})
-            },
-        }
+        form = TransacaoFinanceiraForm
 
         def get_urls(self):
             urls = super().get_urls()
