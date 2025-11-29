@@ -9,6 +9,8 @@ from django.db import models
 from django import forms
 from .relatorio import gerar_relatorio_viagem
 from .services import extrair_url_selecionada, extrair_url
+from datetime import datetime
+
 
 locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
 class TransacaoFinanceiraForm(forms.ModelForm):
@@ -130,7 +132,16 @@ class TransacaoFinanceiraAdmin(UserFilteredAdmin):
 
         def get_changeform_initial_data(self, request):
             initial = super().get_changeform_initial_data(request)
+            ultima_viagem = Viagem.objects.order_by('-id').first()
             dados = request.session.pop('url_qrcode', None)
+            data_criacao = datetime.now
+            
+            if data_criacao:
+                data_criacao
+
+            if ultima_viagem:
+                initial['viagem'] = ultima_viagem
+
             if dados:
                 transacao = extrair_url(dados)
                 initial['nota_fiscal'] = dados

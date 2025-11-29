@@ -1,7 +1,8 @@
 from django.contrib.auth.models import User
 from django.db import models
-from datetime import datetime
+from django.utils import timezone
 import locale
+
 locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
 
 
@@ -10,7 +11,11 @@ TIPO_CHOICES = [
     ('S', 'Saida'),
 ]
 
-# Create your models here.
+def hoje_meia_noite():
+    agora = timezone.now()
+    agora_local = timezone.localtime(agora)
+    return agora_local.replace(hour=0, minute=0, second=0, microsecond=0)
+
 class Viagem(models.Model):
     destino=models.CharField(max_length=50) 
     empresa=models.CharField(max_length=50, default = "Smart Picking Soluções Digitais Ltda")
@@ -25,10 +30,10 @@ class Viagem(models.Model):
         return f"{self.destino} - {self.motivo}"
     
 class TransacaoFinanceira(models.Model):
-    valor = models.DecimalField(max_digits=10, decimal_places=2, blank = True, null = True)
-    descricao = models.CharField(max_length=100, blank = True, null = True)
-    data = models.DateTimeField(blank = True, null = True)
-    nota_fiscal = models.URLField(max_length=200, blank = True, null = True)
+    valor = models.DecimalField(max_digits=10, decimal_places=2, blank = True, null = True, default=0.00)
+    descricao = models.CharField(max_length=100, blank = True, null = True, default='-')
+    data = models.DateTimeField(blank = True, null = True, default=hoje_meia_noite)
+    nota_fiscal = models.URLField(max_length=200, blank = True, null = True, help_text='Url obtida atraves do QRCode')
     imagem = models.ImageField(upload_to='despesas/', blank = True, null = True)
 
     viagem = models.ForeignKey(Viagem, on_delete=models.CASCADE, related_name='despesas')
