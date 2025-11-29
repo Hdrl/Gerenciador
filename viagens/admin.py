@@ -5,6 +5,8 @@ from django.contrib.admin.sites import site
 from .models import Viagem, TransacaoFinanceira
 import locale
 from django.views.decorators.csrf import csrf_exempt
+from django.db import models
+from django import forms
 from .relatorio import gerar_relatorio_viagem
 from .services import extrair_url_selecionada, extrair_url
 
@@ -85,6 +87,12 @@ class TransacaoFinanceiraAdmin(UserFilteredAdmin):
         change_list_template = 'admin/viagens/transacaofinanceira/change_list.html'
         exclude = ['usuario']
         
+        formfield_overrides = {
+            models.ImageField: {
+                'widget': forms.ClearableFileInput(attrs={'accept': 'image/*'})
+            },
+        }
+
         def get_urls(self):
             urls = super().get_urls()
             custom_urls = [
