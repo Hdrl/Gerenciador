@@ -5,7 +5,6 @@ import locale
 
 locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
 
-
 TIPO_CHOICES = [
     ('E', 'Entrada'),
     ('S', 'Saida'),
@@ -34,7 +33,7 @@ class TransacaoFinanceira(models.Model):
     descricao = models.CharField(max_length=100, blank = True, null = True, default='-')
     data = models.DateTimeField(blank = True, null = True, default=hoje_meia_noite)
     nota_fiscal = models.URLField(max_length=200, blank = True, null = True, help_text='Url obtida atraves do QRCode')
-    imagem = models.ImageField(upload_to='despesas/', blank = True, null = True)
+    imagem = models.ImageField(upload_to='despesas/', blank = True, null = True, help_text='Tirar foto da nota fiscal')
 
     viagem = models.ForeignKey(Viagem, on_delete=models.CASCADE, related_name='despesas')
     tipo = models.CharField(max_length=1, choices=TIPO_CHOICES, default='S')

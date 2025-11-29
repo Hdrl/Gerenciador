@@ -13,11 +13,13 @@ from datetime import datetime
 
 
 locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
+
 class TransacaoFinanceiraForm(forms.ModelForm):
     class Meta:
         model = TransacaoFinanceira
         fields = '__all__'
         widgets = {
+            # Mantendo sua configuração do accept que funcionou
             'imagem': forms.ClearableFileInput(attrs={'accept': '*/*'})
         }
 
@@ -34,9 +36,10 @@ class UserViagensFilter(admin.SimpleListFilter):
     
     def lookups(self, request, model_admin):
         viagens = []
-        for viagem in Viagem.objects.all():
-            if viagem.usuario == request.user:
-                viagens.append((viagem.id, str(viagem)))
+        # Otimizado para filtrar direto na query em vez de loop python
+        qs = Viagem.objects.filter(usuario=request.user)
+        for viagem in qs:
+            viagens.append((viagem.id, str(viagem)))
         return viagens
     
     def queryset(self, request, queryset):
@@ -90,12 +93,36 @@ class ViagemAdmin(UserFilteredAdmin):
 @admin.register(TransacaoFinanceira)
 class TransacaoFinanceiraAdmin(UserFilteredAdmin):
         ordering=['-data']
-        list_display = ['descricao', 'data', 'valor']
-        list_filter = [UserViagensFilter]
+        list_display = ['descricao', 'data', 'valor', 'viagem']
+        list_filter = [UserViagensFilter] # Seu filtro customizado
         actions = [extrair_url_selecionada]
         change_list_template = 'admin/viagens/transacaofinanceira/change_list.html'
         exclude = ['usuario']
         form = TransacaoFinanceiraForm
+
+        # --- NOVO MÉTODO ADICIONADO AQUI ---
+        def changelist_view(self, request, extra_context=None):
+            # Verifica se não há filtros na URL (request.GET vazio)
+            # E verifica se não estamos vindo de uma edição/salvamento (para não atrapalhar o fluxo)
+            if not request.GET and '/change/' not in request.META.get('HTTP_REFERER', ''):
+                
+                # Busca a última viagem DO USUÁRIO ATUAL
+                if request.user.is_superuser:
+                    ultima_viagem = Viagem.objects.order_by('-id').first()
+                else:
+                    ultima_viagem = Viagem.objects.filter(usuario=request.user).order_by('-id').first()
+
+                if ultima_viagem:
+                    # Cria uma cópia dos parâmetros GET para modificar
+                    q = request.GET.copy()
+                    # Adiciona o filtro da viagem (usando o ID exato)
+                    q['viagem'] = ultima_viagem.id
+                    
+                    # Redireciona para a mesma página, agora com o filtro aplicado
+                    return redirect(request.path + '?' + q.urlencode())
+
+            return super().changelist_view(request, extra_context)
+        # -----------------------------------
 
         def get_urls(self):
             urls = super().get_urls()
@@ -106,14 +133,14 @@ class TransacaoFinanceiraAdmin(UserFilteredAdmin):
         
         @csrf_exempt
         def qrcode_view(self, request):
-            model_admin = site._registry[Viagem]  # pega o ModelAdmin registrado
+            model_admin = site._registry[Viagem]
             context = {
                 'opts': Viagem._meta,
                 'app_label': Viagem._meta.app_label,
                 'has_permission': True,
                 'title': 'QR Code das Viagens',
                 'media': model_admin.media,
-                'cl': None,  # evita erro se não estiver listando objetos
+                'cl': None,
             }
 
             if request.method == "POST":
@@ -132,13 +159,17 @@ class TransacaoFinanceiraAdmin(UserFilteredAdmin):
 
         def get_changeform_initial_data(self, request):
             initial = super().get_changeform_initial_data(request)
-            ultima_viagem = Viagem.objects.order_by('-id').first()
-            dados = request.session.pop('url_qrcode', None)
-            data_criacao = datetime.now
             
-            if data_criacao:
-                data_criacao
-
+            # Ajustado para pegar a última viagem do usuário logado também
+            if request.user.is_superuser:
+                ultima_viagem = Viagem.objects.order_by('-id').first()
+            else:
+                ultima_viagem = Viagem.objects.filter(usuario=request.user).order_by('-id').first()
+                
+            dados = request.session.pop('url_qrcode', None)
+            
+            # Removemos a linha "data_criacao = datetime.now" solta que não fazia nada
+            
             if ultima_viagem:
                 initial['viagem'] = ultima_viagem
 
@@ -147,6 +178,7 @@ class TransacaoFinanceiraAdmin(UserFilteredAdmin):
                 initial['nota_fiscal'] = dados
                 initial['descricao'] = transacao.get('descricao', '')
                 initial['valor'] = transacao.get('valor', '')
+                # Se extrair_url retornar string, certifique-se que o formato é compatível
                 initial['data'] = transacao.get('data', '')
             return initial
 
